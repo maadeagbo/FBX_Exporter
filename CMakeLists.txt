@@ -1,7 +1,7 @@
 # For 64-bit build---> cmake -G "Visual Studio 15 2017 Win64" ../
 # to open solution--> start <project name>.sln
 cmake_minimum_required(VERSION 3.5.1)
-project (Fbx_Parser_Beta)
+project (Fbx_Parser)
 
 # set release or debug builds
 if(CMAKE_CONFIGURATION_TYPES)
@@ -82,34 +82,33 @@ set_property(DIRECTORY ${CMAKE_SOURCE_DIR}
             Fbx_Parser)
 
 # add libraries
-if(WIN32)
-    find_library(FBX_LIB libfbxsdk-md
-                 ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/vs2015/x64/release)
-    if(NOT FBX_LIB)
-      message(FATAL_ERROR "FBX_SDK Release library not found")
-    endif()
-    find_library(FBXD_LIB libfbxsdk-md
-                 ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/vs2015/x64/debug)
-    if(NOT FBXD_LIB)
-      message(FATAL_ERROR "FBX_SDK Debug Release library not found")
-    endif()
-elseif(UNIX)
+if(UNIX OR MINGW)
     find_library(FBX_LIB libfbxsdk.a
-                 ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/gcc4/x64/release)
+                ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/gcc4/release)
     if(NOT FBX_LIB)
-      message(FATAL_ERROR "FBX_SDK Release library not found")
+    message(FATAL_ERROR "FBX_SDK gcc Release library not found")
     endif()
     find_library(FBXD_LIB libfbxsdk.a
-                 ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/gcc4/x64/debug)
+                ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/gcc4/debug)
     if(NOT FBXD_LIB)
-      message(FATAL_ERROR "FBX_SDK Debug Release library not found")
+    message(FATAL_ERROR "FBX_SDK gcc Debug library not found")
+    endif()
+elseif(WIN32)
+    find_library(FBX_LIB libfbxsdk-md
+                 ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/vs2015/release)
+    if(NOT FBX_LIB)
+      message(FATAL_ERROR "FBX_SDK windows Release library not found")
+    endif()
+    find_library(FBXD_LIB libfbxsdk-md
+                 ${CMAKE_SOURCE_DIR}/FBX_SDK/lib/vs2015/debug)
+    if(NOT FBXD_LIB)
+      message(FATAL_ERROR "FBX_SDK windows Debug library not found")
     endif()
 endif()
 
-if(WIN32)
-    target_link_libraries(Fbx_Parser optimized ${FBX_LIB} debug ${FBXD_LIB})
-endif()
-if(UNIX)
+if(UNIX OR MINGW)
     target_link_libraries(Fbx_Parser optimized ${FBX_LIB} "-ldl"
                                      debug ${FBXD_LIB} "-ldl")
+elseif(WIN32)
+    target_link_libraries(Fbx_Parser optimized ${FBX_LIB} debug ${FBXD_LIB})
 endif()

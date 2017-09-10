@@ -34,7 +34,7 @@ void getVertInfo(T info_type,
 		case FbxGeometryElement::eByControlPoint:
 			switch( info_type->GetReferenceMode() ) {
 				case FbxGeometryElement::eDirect:
-					if( type_id.find("FbxLayerElementUVE") != std::string::npos ) {
+					if( typeid(T) == typeid(FbxGeometryElementUV*) ) {
 						vec[0] = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[0]);
 						vec[1] = 1 - static_cast<float>(
@@ -53,7 +53,7 @@ void getVertInfo(T info_type,
 				case FbxGeometryElement::eIndexToDirect:
 				{
 					int index = info_type->GetIndexArray().GetAt(ctrlpnt_idx);
-					if( type_id.find("FbxLayerElementUVE") != std::string::npos ) {
+					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
 						vec[0] = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[0]);
 						vec[1] = 1 - static_cast<float>(
@@ -78,7 +78,7 @@ void getVertInfo(T info_type,
 		case FbxGeometryElement::eByPolygonVertex:
 			switch( info_type->GetReferenceMode() ) {
 				case FbxGeometryElement::eDirect:
-					if( type_id.find("FbxLayerElementUVE") != std::string::npos ) {
+					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
 						vec[0] = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
 						vec[1] = 1 - static_cast<float>(
@@ -97,7 +97,7 @@ void getVertInfo(T info_type,
 				case FbxGeometryElement::eIndexToDirect:
 				{
 					int index = info_type->GetIndexArray().GetAt(ctrlpnt_idx);
-					if( type_id.find("FbxLayerElementUVE") != std::string::npos ) {
+					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
 						vec[0] = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
 						vec[1] = 1 - static_cast<float>(
