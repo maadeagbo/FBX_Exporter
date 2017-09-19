@@ -10,7 +10,6 @@ if(CMAKE_CONFIGURATION_TYPES)
      "Reset the configurations to what we need"
      FORCE)
  endif()
-SET(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CXX_STANDARD 11)
 
 
