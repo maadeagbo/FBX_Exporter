@@ -237,9 +237,9 @@ struct MatFBX
 
 struct AnimSample
 {
-	vec3f		rot;
-	vec3f		pos;
-	float		scal;
+	vec3f		rot = {0, 0, 0};
+	//vec3f		pos;
+	//float		scal;
 };
 
 struct PoseSample
@@ -266,6 +266,7 @@ struct AssetFBX
 	dd_array<VertPNTUV> m_verts;
 	dd_array<EboMesh> 	m_ebos;
 	SkelFbx				m_skeleton;
+	dd_array<AnimClipFBX> m_clips;
 
 	void addMesh(MeshFBX& _mesh, dd_array<size_t> &ebo_data);
 	void exportMesh();

@@ -41,7 +41,7 @@ void processAsset(FbxNode* node, AssetFBX &_asset)
 	printf("Mesh name ='%s'(%lu)\n",
 		   mesh.m_id._str(), mesh.m_id.gethash());
 
-	// export DDM (mesh), DDA (animations), and DDS (skeleton) files
+	// export DDM (mesh), DDA (animations), and DDB (skeleton) files
 	_asset.exportMesh();
 	_asset.exportSkeleton();
 }
@@ -93,42 +93,42 @@ void getCurveInfo(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
     if (lAnimCurve)
     {
         //printf("        TX\n");
-        DisplayCurve(lAnimCurve);
+        //DisplayCurve(lAnimCurve);
     }
     lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
         //printf("        TY\n");
-        DisplayCurve(lAnimCurve);
+        //DisplayCurve(lAnimCurve);
     }
     lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
         //printf("        TZ\n");
-        DisplayCurve(lAnimCurve);
+        //DisplayCurve(lAnimCurve);
     }
 
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_X);
     if (lAnimCurve)
     {
-        //printf("        RX\n");
+        printf("        RX\n");
         DisplayCurve(lAnimCurve);
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
-        //printf("        RY\n");
+        printf("        RY\n");
         DisplayCurve(lAnimCurve);
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
-        //printf("        RZ\n");
+        printf("        RZ\n");
         DisplayCurve(lAnimCurve);
     }
 
@@ -137,21 +137,21 @@ void getCurveInfo(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
     if (lAnimCurve)
     {
         //printf("        SX\n");
-        DisplayCurve(lAnimCurve);
+        //DisplayCurve(lAnimCurve);
     }
     lAnimCurve = node->LclScaling.GetCurve(animlayer,
 										   FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
         //printf("        SY\n");
-        DisplayCurve(lAnimCurve);
+        //DisplayCurve(lAnimCurve);
     }
     lAnimCurve = node->LclScaling.GetCurve(animlayer,
 										   FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
         //printf("        SZ\n");
-        DisplayCurve(lAnimCurve);
+        //DisplayCurve(lAnimCurve);
     }
 }
 
@@ -159,17 +159,30 @@ void getCurveInfo(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
 /// \param node FbxNode with animation information
 /// \param animstack FbxAnimLayer with animation information
 /// \param _asset AssetFBX that holds to be exported data
-void processAnimLayer(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
+void processAnimLayer(
+	FbxNode* node, 
+	FbxAnimLayer *animlayer, 
+	AssetFBX &_asset,
+	AnimClipFBX &clip )
 {
 	FbxString lOutputString;
-    lOutputString = "     Node Name: ";
-    lOutputString += node->GetName();
-    printf("%s\n", lOutputString.Buffer());
+    lOutputString = "     Node found: ";
+	lOutputString += node->GetName();
 
-	getCurveInfo(node, animlayer, _asset);
+	cbuff<32> node_name;
+	node_name.set(node->GetName());
+	bool bone_found = false;
+	// only save animations from skeleton 
+	for(unsigned i = 0; i < _asset.m_skeleton.m_numJoints && !bone_found; i++) {
+		if( _asset.m_skeleton.m_joints[i].m_name == node_name) {
+			bone_found = true;
+			printf("%s\n", lOutputString.Buffer());
+			getCurveInfo(node, animlayer, _asset);
+		}
+	}
 
 	for (int i = 0; i < node->GetChildCount(); i++) {
-		processAnimLayer(node->GetChild(i), animlayer, _asset);
+		processAnimLayer(node->GetChild(i), animlayer, _asset, clip);
 	}
 }
 
@@ -180,12 +193,13 @@ void processAnimLayer(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
 void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
 {
 	int nbAnimLayers = animstack->GetMemberCount<FbxAnimLayer>();
-    FbxString lOutputString;
+	FbxString lOutputString;
+	_asset.m_clips.resize(nbAnimLayers);
 
     lOutputString = "Animation stack contains ";
     lOutputString += nbAnimLayers;
     lOutputString += " Animation Layer(s)\n";
-    printf("%s\n", lOutputString.Buffer());
+	printf("%s\n", lOutputString.Buffer());
 
     for (int i = 0; i < nbAnimLayers; i++)
     {
@@ -196,7 +210,7 @@ void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
         lOutputString += "\n";
         printf("%s\n", lOutputString.Buffer());
 
-        processAnimLayer(node, lAnimLayer, _asset);
+        processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
     }
 }
 
@@ -693,6 +707,6 @@ void DisplayCurve(FbxAnimCurve* pCurve)
         }
         lOutputString += " ]";
         lOutputString += "\n";
-        //printf("%s\n", lOutputString.Buffer());
+        printf("%s\n", lOutputString.Buffer());
     }
 }

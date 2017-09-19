@@ -69,7 +69,7 @@ void AssetFBX::exportSkeleton()
 {
 	char lineBuff[256];
 	std::fstream outfile;
-	outfile.open("skeleton.dds", std::ofstream::out);
+	outfile.open("skeleton.ddb", std::ofstream::out);
 
 	// check file is open
 	if (outfile.bad()) {

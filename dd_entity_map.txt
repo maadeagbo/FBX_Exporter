@@ -33,9 +33,8 @@ DDM extension: (3D Mesh)
         s:      (unsigned int) size->       x
         m:      material index->            x
     	-:		(32-bit uint) indices->		x, y, z
-    anim:		animation data (not implemented yet):
 
-DDS extension: (Skeleton heirarchy)
+DDB extension: (Skeleton heirarchy)
     size:       (8-bit uint) # of joints    x
     global:     joint to world space
         p:      (float) position            x, y, z
@@ -48,6 +47,10 @@ DDS extension: (Skeleton heirarchy)
         s:      (float) scale               x, y, z
 
 DDA extension: (Animation clip)
-    framerate:  (float) base animation framerat
+    framerate:  (float) base animation framerate
+	size:       (8-bit uint) # of joints    x
+    joints:     skeletal joint information
+        -:      (uint)name, index, parent   x, y, z
+        r:      (float) rotation            x, y, z
 
 End file may be compressed w/ gz extension to save on size
