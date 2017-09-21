@@ -1,7 +1,7 @@
 #include "FBX_MeshFuncs.h"
 #include <vector>
 
-void DisplayCurve(FbxAnimCurve* pCurve);
+dd_array<vec2_f> DisplayCurve(FbxAnimCurve* pCurve);
 
 /// \brief Process asset and export file w/ mesh and animation data
 /// \param node FbxNode with mesh and anim information
@@ -84,9 +84,15 @@ void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset)
 /// \param node FbxNode with animation information
 /// \param animstack FbxAnimLayer with animation information
 /// \param _asset AssetFBX that holds to be exported data
-void getCurveInfo(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
+void getCurveInfo(
+	FbxNode* node,
+	FbxAnimLayer *animlayer,
+	AssetFBX &_asset,
+	const unsigned jnt_idx)
 {
 	FbxAnimCurve* lAnimCurve = NULL;
+	dd_array<vec2_f> frames;
+
 	// general curves
 	lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_X);
@@ -122,7 +128,14 @@ void getCurveInfo(FbxNode* node, FbxAnimLayer *animlayer, AssetFBX &_asset)
     if (lAnimCurve)
     {
         printf("        RY\n");
-        DisplayCurve(lAnimCurve);
+		frames = std::move(DisplayCurve(lAnimCurve));
+		for (unsigned i = 0; i < frames.size(); i++) {
+			printf("y%u-> %u:%.3f\n", 
+					i, 
+					(unsigned)frames[i].data[0], 
+					frames[i].data[1]
+			);
+		}
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Z);
@@ -177,7 +190,7 @@ void processAnimLayer(
 		if( _asset.m_skeleton.m_joints[i].m_name == node_name) {
 			bone_found = true;
 			printf("%s\n", lOutputString.Buffer());
-			getCurveInfo(node, animlayer, _asset);
+			getCurveInfo(node, animlayer, _asset, i);
 		}
 	}
 
@@ -605,8 +618,10 @@ dd_array<MatFBX> processMats(FbxNode * node)
 }
 
 /// \brief Extract animation data from curves
-void DisplayCurve(FbxAnimCurve* pCurve)
+dd_array<vec2_f> DisplayCurve(FbxAnimCurve* pCurve)
 {
+	dd_array<vec2_f> output;
+
     static const char* interpolation[] = { "?", "constant", "linear", "cubic"};
     static const char* constantMode[] =  { "?", "Standard", "Next" };
     static const char* cubicMode[] =     { "?", "Auto", "Auto break", "Tcb",
@@ -678,7 +693,8 @@ void DisplayCurve(FbxAnimCurve* pCurve)
     FbxString lOutputString;
     int     lCount;
 
-    int lKeyCount = pCurve->KeyGetCount();
+	int lKeyCount = pCurve->KeyGetCount();
+	output.resize(lKeyCount);
 
     for(lCount = 0; lCount < lKeyCount; lCount++)
     {
@@ -690,7 +706,13 @@ void DisplayCurve(FbxAnimCurve* pCurve)
         lOutputString += ".... Key Value: ";
         lOutputString += lKeyValue;
         lOutputString += " [ ";
-        lOutputString += interpolation[ InterpolationFlagToIndex(pCurve->KeyGetInterpolation(lCount)) ];
+		lOutputString += interpolation[ InterpolationFlagToIndex(pCurve->KeyGetInterpolation(lCount)) ];
+		
+		// get value and frame number
+		char* frame_num = lKeyTime.GetTimeString(lTimeString, FbxUShort(256));
+		output[lCount].data[0] = std::strtod(frame_num, nullptr);
+		output[lCount].data[1] = lKeyValue;
+
         if ((pCurve->KeyGetInterpolation(lCount)&FbxAnimCurveDef::eInterpolationConstant) == FbxAnimCurveDef::eInterpolationConstant)
         {
             lOutputString += " | ";
@@ -707,6 +729,7 @@ void DisplayCurve(FbxAnimCurve* pCurve)
         }
         lOutputString += " ]";
         lOutputString += "\n";
-        printf("%s\n", lOutputString.Buffer());
-    }
+        //printf("%s\n", lOutputString.Buffer());
+	}
+	return output;
 }

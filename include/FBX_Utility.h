@@ -9,11 +9,74 @@
 
 #define MAX_JOINTS ((uint8_t)-1)
 
-typedef float vec4f[4];		//< 4 float vector
-typedef float vec3f[3];		//< 3 float vector
-typedef float vec2f[2];		//< 2 float vector
-typedef uint32_t vec4u[4];	//< 4 unsigned int vector
-typedef uint32_t vec3u[3];	//< 3 unsigned int vector
+template<typename T>
+struct dd_vec4
+{
+	T data[4];
+	dd_vec4(T x = 0, T y = 0, T z = 0, T w = 0)
+	{
+		data[0] = x;
+		data[1] = y;
+		data[2] = z;
+		data[3] = w;
+	}
+
+	dd_vec4(T other_data[4], const unsigned size = 4)
+	{
+		for (unsigned i = 0; i < size; i++) {
+			data[i] = other_data[i];
+		}
+	}
+
+	void operator=(const dd_vec4 other)
+	{
+		data[0] = other.data[0];
+		data[1] = other.data[1];
+		data[2] = other.data[2];
+		data[3] = other.data[3];
+	}
+
+	dd_vec4 operator-(const dd_vec4 other) const
+	{
+		return dd_vec4(data[0] - other.data[0],
+					   data[1] - other.data[1],
+					   data[2] - other.data[2],
+					   data[3] - other.data[3]);
+	}
+
+	T& x() { return data[0]; }
+	T const& x() const { return data[0]; }
+	T& y() { return data[1]; }
+	T const& y() const { return data[1]; }
+	T& z() { return data[2]; }
+	T const& z() const { return data[2]; }
+	T& w() { return data[3]; }
+	T const& w() const { return data[3]; }
+};
+
+#define CREATE_VEC(TYPE, SYMBOL, SIZE) \
+struct vec##SIZE##_##SYMBOL : public dd_vec4<TYPE> \
+{ \
+	vec##SIZE##_##SYMBOL(TYPE x = 0, TYPE y = 0, TYPE z = 0, TYPE w = 0) : \
+		dd_vec4(x, y, z, w) {} \
+ \
+ 	vec##SIZE##_##SYMBOL(TYPE bin[SIZE]) : dd_vec4(bin, SIZE) \
+	{ \
+		for(unsigned i = (SIZE - 1); i < 4; i++) { data[i] = 0; } \
+	} \
+};
+
+CREATE_VEC(float, f, 4)
+CREATE_VEC(float, f, 3)
+CREATE_VEC(float, f, 2)
+CREATE_VEC(uint32_t, u, 4)
+CREATE_VEC(uint32_t, u, 3)
+
+// typedef float vec4_f[4];		//< 4 float vector
+// typedef float vec3_f[3];		//< 3 float vector
+// typedef float vec2_f[2];		//< 2 float vector
+// typedef uint32_t vec4_u[4];	//< 4 unsigned int vector
+// typedef uint32_t vec3_f[3];	//< 3 unsigned int vector
 
 // Enum bitwise flags
 template<typename Enum>
@@ -59,19 +122,6 @@ operator &(Enum lhs, Enum rhs)
 		);
 }
 
-inline void setVec3(const vec3f &source, vec3f &sink)
-{
-	sink[0] = source[0];
-	sink[1] = source[1];
-	sink[2] = source[2];
-}
-
-inline void setVec2(const vec3f &source, vec2f &sink)
-{
-	sink[0] = source[0];
-	sink[1] = source[1];
-}
-
 static size_t getCharHash(const char* s)
 {
 	size_t h = 5381;
@@ -110,17 +160,17 @@ private:
 /// Triangle information (uses typedef arrays for least amount of padding)
 struct VertPNTUV
 {
-	vec4u m_joint;
-	vec4f m_jblend;
-	vec3f m_pos;
-	vec3f m_norm;
-	vec3f m_tang;
-	vec2f m_uv;
+	vec4_u m_joint;
+	vec4_f m_jblend;
+	vec3_f m_pos;
+	vec3_f m_norm;
+	vec3_f m_tang;
+	vec2_f m_uv;
 };
 
 struct TriFBX
 {
-	vec3u		m_indices;
+	vec3_u		m_indices;
 	size_t		m_mat_idx;
 };
 
@@ -133,7 +183,7 @@ struct CtrlPnt
 			m_blend[i] = 0;
 		}
 	}
-	vec3f		m_pos;
+	vec3_f		m_pos;
 	uint16_t	m_joint[4];
 	float		m_blend[4];
 	// add joint blend weights to control point
@@ -170,18 +220,18 @@ struct JointFBX
 	cbuff<32>	m_name;
 	uint8_t		m_idx;
 	uint8_t		m_parent;
-	vec3f		m_lspos = { 0, 0, 0 };
-	vec3f		m_lsrot = { 0, 0, 0 };
-	vec3f		m_lsscl = { 1, 1, 1 };
+	vec3_f		m_lspos = { 0, 0, 0 };
+	vec3_f		m_lsrot = { 0, 0, 0 };
+	vec3_f		m_lsscl = { 1, 1, 1 };
 };
 
 struct SkelFbx
 {
 	JointFBX 	m_joints[MAX_JOINTS];
 	uint8_t		m_numJoints = 0;
-	vec3f		m_wspos = { 0, 0, 0 };
-	vec3f		m_wsrot = { 0, 0, 0 };
-	vec3f		m_wsscl = { 1, 1, 1 };
+	vec3_f		m_wspos = { 0, 0, 0 };
+	vec3_f		m_wsrot = { 0, 0, 0 };
+	vec3_f		m_wsscl = { 1, 1, 1 };
 };
 
 enum class MatType
@@ -220,10 +270,10 @@ struct MatFBX
 	cbuff<128>	m_aomap;
 	cbuff<128>	m_metalmap;
 	cbuff<64>	m_id;
-	vec3f		m_ambient;
-	vec3f		m_diffuse;
-	vec3f		m_specular;
-	vec3f		m_emmisive;
+	vec3_f		m_ambient;
+	vec3_f		m_diffuse;
+	vec3_f		m_specular;
+	vec3_f		m_emmisive;
 	float		m_transfactor;
 	float		m_reflectfactor;
 	float		m_specfactor;
@@ -237,8 +287,8 @@ struct MatFBX
 
 struct AnimSample
 {
-	vec3f		rot = {0, 0, 0};
-	//vec3f		pos;
+	vec3_f		rot = {0, 0, 0};
+	//vec3_f		pos;
 	//float		scal;
 };
 
@@ -254,12 +304,12 @@ struct AnimClipFBX
 
 	cbuff<64> 	m_id;
 	float		m_framerate;
-	std::map<float, PoseSample> m_clip;
+	std::map<unsigned, PoseSample> m_clip;
 };
 
 struct AssetFBX
 {
-	struct EboMesh { dd_array<vec3u> indices; };
+	struct EboMesh { dd_array<vec3_f> indices; };
 
 	cbuff<32>			m_id;
 	dd_array<MatFBX> 	m_matbin;

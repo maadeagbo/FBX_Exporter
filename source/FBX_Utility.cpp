@@ -52,16 +52,6 @@ void AssetFBX::addMesh(MeshFBX & _mesh, dd_array<size_t> &ebo_data)
 			_mesh.m_triangles[i].m_indices[2];
 		idx_tracker[value] += 1;
 	}
-	/*
-	for (size_t i = 0; i < m_ebos.size(); i++) {
-		printf("Ebo: #%lu\n", i);
-		for (size_t j = 0; j < m_ebos[i].indices.size(); j++) {
-			printf("\t%u, %u, %u\n", m_ebos[i].indices[j][0],
-				m_ebos[i].indices[j][1],
-				m_ebos[i].indices[j][2]);
-		}
-	}
-	//*/
 }
 
 /// \brief Export skeleton to format specified by dd_entity_map.txt
