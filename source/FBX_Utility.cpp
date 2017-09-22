@@ -254,5 +254,44 @@ void AssetFBX::exportMesh()
 /// \brief Export animation to format specified by dd_entity_map.txt
 void AssetFBX::exportAnimation()
 {
+	for(unsigned i = 0; i < m_clips.size(); i++) {
+		char lineBuff[256];
+		snprintf(lineBuff, sizeof(lineBuff), "%s.dda", m_clips[i].m_id.str());
+		std::fstream outfile;
+		outfile.open(lineBuff, std::ofstream::out);
 	
+		// check file is open
+		if (outfile.bad()) {
+			printf("Could not open animation output file\n" );
+			return;
+		}
+
+		// framerate
+		snprintf(lineBuff, sizeof(lineBuff), "%.3f", m_clips[i].m_framerate);
+		outfile << "<framerate>\n" << lineBuff << "\n</framerate>\n";
+		// buffer sizes
+		outfile << "<buffer>\n";
+		snprintf(lineBuff, sizeof(lineBuff), "j %u", m_clips[i].m_joints);
+		outfile << lineBuff << "\n";
+		snprintf(lineBuff, sizeof(lineBuff), "f %lu", m_clips[i].m_clip.size());
+		outfile << lineBuff << "\n";
+		outfile << "</buffer>\n";	
+
+		// animation data
+		outfile << "<animation>\n";
+		for(unsigned j = 0; j < m_clips[i].m_joints; j++) {
+			snprintf(lineBuff, sizeof(lineBuff), "- %u", j);
+			outfile << lineBuff << "\n";
+			for(auto& p : m_clips[i].m_clip) {
+				snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f",
+					p.second.pose[j].rot.x(),
+					p.second.pose[j].rot.y(),
+					p.second.pose[j].rot.z());
+				outfile << lineBuff << "\n";
+			}
+		}
+		outfile << "</animation>\n";
+
+		outfile.close();
+	}
 }

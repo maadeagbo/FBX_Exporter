@@ -47,7 +47,6 @@ DDB extension: (Skeleton heirarchy)
         s:      (float) scale               x, y, z
 
 DDA extension: (Animation clip)
-    name:       name of clip
     framerate:  (float) base animation framerate
     buffer:		buffer size data:
 	    j:      (8-bit uint) # of joints    x
