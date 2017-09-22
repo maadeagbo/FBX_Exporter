@@ -184,7 +184,7 @@ struct CtrlPnt
 		}
 	}
 	vec3_f		m_pos;
-	uint16_t	m_joint[4];
+	unsigned	m_joint[4];
 	float		m_blend[4];
 	// add joint blend weights to control point
 	void addBWPair(const uint16_t idx, const float bw)
@@ -304,12 +304,13 @@ struct AnimClipFBX
 
 	cbuff<64> 	m_id;
 	float		m_framerate;
+	uint8_t		m_joints;
 	std::map<unsigned, PoseSample> m_clip;
 };
 
 struct AssetFBX
 {
-	struct EboMesh { dd_array<vec3_f> indices; };
+	struct EboMesh { dd_array<vec3_u> indices; };
 
 	cbuff<32>			m_id;
 	dd_array<MatFBX> 	m_matbin;

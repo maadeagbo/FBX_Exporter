@@ -44,12 +44,8 @@ void AssetFBX::addMesh(MeshFBX & _mesh, dd_array<size_t> &ebo_data)
 	for( size_t i = 0; i < _mesh.m_triangles.size(); i++ ) {
 		size_t key = _mesh.m_triangles[i].m_mat_idx;
 		size_t value = mat_idx[key];
-		m_ebos[value].indices[idx_tracker[value]][0] =
-			_mesh.m_triangles[i].m_indices[0];
-		m_ebos[value].indices[idx_tracker[value]][1] =
-			_mesh.m_triangles[i].m_indices[1];
-		m_ebos[value].indices[idx_tracker[value]][2] =
-			_mesh.m_triangles[i].m_indices[2];
+		m_ebos[value].indices[idx_tracker[value]] =
+			_mesh.m_triangles[i].m_indices;
 		idx_tracker[value] += 1;
 	}
 }
@@ -73,19 +69,19 @@ void AssetFBX::exportSkeleton()
 	// joint to world space
 	outfile << "<global>\n";
 	snprintf(lineBuff, sizeof(lineBuff), "p %.3f %.3f %.3f\n",
-			 m_skeleton.m_wspos[0],
-			 m_skeleton.m_wspos[1],
-			 m_skeleton.m_wspos[2]);
+			 m_skeleton.m_wspos.x(),
+			 m_skeleton.m_wspos.y(),
+			 m_skeleton.m_wspos.z());
 	outfile << lineBuff;
 	snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
-			 m_skeleton.m_wsrot[0],
-			 m_skeleton.m_wsrot[1],
-			 m_skeleton.m_wsrot[2]);
+			 m_skeleton.m_wsrot.x(),
+			 m_skeleton.m_wsrot.y(),
+			 m_skeleton.m_wsrot.z());
 	outfile << lineBuff;
 	snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f\n",
-			 m_skeleton.m_wsscl[0],
-			 m_skeleton.m_wsscl[1],
-			 m_skeleton.m_wsscl[2]);
+			 m_skeleton.m_wsscl.x(),
+			 m_skeleton.m_wsscl.y(),
+			 m_skeleton.m_wsscl.z());
 	outfile << lineBuff;
 	outfile << "</global>\n";
 	// joints
@@ -98,19 +94,19 @@ void AssetFBX::exportSkeleton()
 			 	 _j.m_parent);
 		outfile << lineBuff;
 		snprintf(lineBuff, sizeof(lineBuff), "p %.3f %.3f %.3f\n",
-				 _j.m_lspos[0],
-				 _j.m_lspos[1],
-				 _j.m_lspos[2]);
+				 _j.m_lspos.x(),
+				 _j.m_lspos.y(),
+				 _j.m_lspos.z());
 		outfile << lineBuff;
 		snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
-				 _j.m_lsrot[0],
-				 _j.m_lsrot[1],
-				 _j.m_lsrot[2]);
+				 _j.m_lsrot.x(),
+				 _j.m_lsrot.y(),
+				 _j.m_lsrot.z());
 		outfile << lineBuff;
 		snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f\n",
-				 _j.m_lsscl[0],
-				 _j.m_lsscl[1],
-				 _j.m_lsscl[2]);
+				 _j.m_lsscl.x(),
+				 _j.m_lsscl.y(),
+				 _j.m_lsscl.z());
 		outfile << lineBuff;
 		outfile << "</joint>\n";
 	}
@@ -178,16 +174,16 @@ void AssetFBX::exportMesh()
 		}
 		// vector properties
 		snprintf(lineBuff, sizeof(lineBuff), "a %.3f %.3f %.3f",
-				 _m.m_ambient[0], _m.m_ambient[1], _m.m_ambient[2]);
+				 _m.m_ambient.x(), _m.m_ambient.y(), _m.m_ambient.z());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "d %.3f %.3f %.3f",
-				 _m.m_diffuse[0], _m.m_diffuse[1], _m.m_diffuse[2]);
+				 _m.m_diffuse.x(), _m.m_diffuse.y(), _m.m_diffuse.z());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f",
-				 _m.m_specular[0], _m.m_specular[1], _m.m_specular[2]);
+				 _m.m_specular.x(), _m.m_specular.y(), _m.m_specular.z());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "e %.3f %.3f %.3f",
-				 _m.m_emmisive[0], _m.m_emmisive[1], _m.m_emmisive[2]);
+				 _m.m_emmisive.x(), _m.m_emmisive.y(), _m.m_emmisive.z());
 		outfile << lineBuff << "\n";
 
 		// float properties
@@ -204,35 +200,35 @@ void AssetFBX::exportMesh()
 	outfile << "<vertex>\n";
 	for (size_t i = 0; i < m_verts.size(); i++) {
 		snprintf(lineBuff, sizeof(lineBuff), "v %.3f %.3f %.3f",
-				 m_verts[i].m_pos[0],
-				 m_verts[i].m_pos[1],
-				 m_verts[i].m_pos[2]);
+				 m_verts[i].m_pos.x(),
+				 m_verts[i].m_pos.y(),
+				 m_verts[i].m_pos.z());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "n %.3f %.3f %.3f",
-				 m_verts[i].m_norm[0],
-				 m_verts[i].m_norm[1],
-				 m_verts[i].m_norm[2]);
+				 m_verts[i].m_norm.x(),
+				 m_verts[i].m_norm.y(),
+				 m_verts[i].m_norm.z());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "t %.3f %.3f %.3f",
-				 m_verts[i].m_tang[0],
-				 m_verts[i].m_tang[1],
-				 m_verts[i].m_tang[2]);
+				 m_verts[i].m_tang.x(),
+				 m_verts[i].m_tang.y(),
+				 m_verts[i].m_tang.z());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "u %.3f %.3f",
-				 m_verts[i].m_uv[0],
-				 m_verts[i].m_uv[1]);
+				 m_verts[i].m_uv.x(),
+				 m_verts[i].m_uv.y());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "j %u %u %u %u",
-				 m_verts[i].m_joint[0],
-				 m_verts[i].m_joint[1],
-				 m_verts[i].m_joint[2],
-				 m_verts[i].m_joint[3]);
+				 m_verts[i].m_joint.x(),
+				 m_verts[i].m_joint.y(),
+				 m_verts[i].m_joint.z(),
+				 m_verts[i].m_joint.w());
 		outfile << lineBuff << "\n";
 		snprintf(lineBuff, sizeof(lineBuff), "b %.3f %.3f %.3f %.3f",
-				 m_verts[i].m_jblend[0],
-				 m_verts[i].m_jblend[1],
-				 m_verts[i].m_jblend[2],
-				 m_verts[i].m_jblend[3]);
+				 m_verts[i].m_jblend.x(),
+				 m_verts[i].m_jblend.y(),
+				 m_verts[i].m_jblend.z(),
+				 m_verts[i].m_jblend.w());
 		outfile << lineBuff << "\n";
 	}
 	outfile << "</vertex>\n";
@@ -246,7 +242,7 @@ void AssetFBX::exportMesh()
 		outfile << "m " << i << "\n"; // material index
 		for (size_t j = 0; j < _e.indices.size(); j++) {
 			snprintf(lineBuff, sizeof(lineBuff), "- %u %u %u",
-					 _e.indices[j][0], _e.indices[j][1], _e.indices[j][2]);
+					 _e.indices[j].x(), _e.indices[j].y(), _e.indices[j].z());
 			outfile << lineBuff << "\n";
 		}
 		outfile << "</ebo>\n";

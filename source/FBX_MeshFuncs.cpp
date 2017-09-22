@@ -18,11 +18,11 @@ void processAsset(FbxNode* node, AssetFBX &_asset)
 	// get vertex positions
 	for( size_t i = 0; i < mesh.m_ctrlpnts.size(); i++ ) {
 		CtrlPnt &cp = mesh.m_ctrlpnts[i];
-		cp.m_pos[0] = static_cast<float>(
+		cp.m_pos.data[0] = static_cast<float>(
 			currmesh->GetControlPointAt((int)i).mData[0]);
-		cp.m_pos[1] = static_cast<float>(
+		cp.m_pos.data[1] = static_cast<float>(
 			currmesh->GetControlPointAt((int)i).mData[1]);
-		cp.m_pos[2] = static_cast<float>(
+		cp.m_pos.data[2] = static_cast<float>(
 			currmesh->GetControlPointAt((int)i).mData[2]);
 	}
 
@@ -87,11 +87,11 @@ void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset)
 void getCurveInfo(
 	FbxNode* node,
 	FbxAnimLayer *animlayer,
-	AssetFBX &_asset,
+	AnimClipFBX &animclip,
 	const unsigned jnt_idx)
 {
 	FbxAnimCurve* lAnimCurve = NULL;
-	dd_array<vec2_f> frames;
+	dd_array<vec2_f> frameX, frameY, frameZ;
 
 	// general curves
 	lAnimCurve = node->LclTranslation.GetCurve(animlayer,
@@ -120,29 +120,22 @@ void getCurveInfo(
 											FBXSDK_CURVENODE_COMPONENT_X);
     if (lAnimCurve)
     {
-        printf("        RX\n");
-        DisplayCurve(lAnimCurve);
+        //printf("        RX\n");
+		frameX = std::move(DisplayCurve(lAnimCurve));
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
-        printf("        RY\n");
-		frames = std::move(DisplayCurve(lAnimCurve));
-		for (unsigned i = 0; i < frames.size(); i++) {
-			printf("y%u-> %u:%.3f\n", 
-					i, 
-					(unsigned)frames[i].data[0], 
-					frames[i].data[1]
-			);
-		}
+        //printf("        RY\n");
+		frameY = std::move(DisplayCurve(lAnimCurve));
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
-        printf("        RZ\n");
-        DisplayCurve(lAnimCurve);
+        //printf("        RZ\n");
+		frameZ = std::move(DisplayCurve(lAnimCurve));
     }
 
     lAnimCurve = node->LclScaling.GetCurve(animlayer,
@@ -166,6 +159,17 @@ void getCurveInfo(
         //printf("        SZ\n");
         //DisplayCurve(lAnimCurve);
     }
+	// save grabbed frames
+	// assume this joints x, y, and z keyframes have the same frames
+	for (unsigned i = 0; i < frameX.size(); i++) {
+		//
+		printf("        %u-> %.3f %.3f %.3f\n", 
+			   (unsigned)frameX[i].x(),
+			   frameX[i].y(),
+			   frameY[i].y(),
+			   frameZ[i].y()
+		);
+	}
 }
 
 /// \brief Get animation data from fbx
@@ -185,12 +189,12 @@ void processAnimLayer(
 	cbuff<32> node_name;
 	node_name.set(node->GetName());
 	bool bone_found = false;
-	// only save animations from skeleton 
+	// only save animations from skeleton
 	for(unsigned i = 0; i < _asset.m_skeleton.m_numJoints && !bone_found; i++) {
 		if( _asset.m_skeleton.m_joints[i].m_name == node_name) {
 			bone_found = true;
 			printf("%s\n", lOutputString.Buffer());
-			getCurveInfo(node, animlayer, _asset, i);
+			getCurveInfo(node, animlayer, clip, i);
 		}
 	}
 
@@ -223,6 +227,7 @@ void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
         lOutputString += "\n";
         printf("%s\n", lOutputString.Buffer());
 
+		_asset.m_clips[i].m_joints = _asset.m_skeleton.m_numJoints;
         processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
     }
 }
@@ -250,6 +255,12 @@ void processSkeleton(FbxGeometry *_geom, MeshFBX &mesh, SkelFbx& _sk)
 			out += std::string("        ") + std::string(lRowValue);
 		}
 		return out;
+	};
+
+	auto printvec3f = [](const vec3_f out, const char* tag = "")
+	{
+		printf("            %.4f %.4f %.4f\t%s\n", 
+			   out.x(), out.y(), out.z(), tag);
 	};
 
     lSkinCount = _geom->GetDeformerCount(FbxDeformer::eSkin);
@@ -284,61 +295,38 @@ void processSkeleton(FbxGeometry *_geom, MeshFBX &mesh, SkelFbx& _sk)
 				lMatrix = lCluster->GetTransformMatrix(lMatrix);
 				// printf("%s\n", matrixToStr(lMatrix).c_str());
 				FbxVector4 pValue1 = lMatrix.GetT();
-				_sk.m_wspos[0] = pValue1.mData[0];
-				_sk.m_wspos[1] = pValue1.mData[1];
-				_sk.m_wspos[2] = pValue1.mData[2];
-				printf("            %.4f %.4f %.4f\t(global)\n",
-					   pValue1.mData[0],
-					   pValue1.mData[1],
-					   pValue1.mData[2]);
+				_sk.m_wspos = vec3_f(
+					pValue1.mData[0], pValue1.mData[1], pValue1.mData[2]);
+				printvec3f(_sk.m_wspos, "global");
+
 				pValue1 = lMatrix.GetR();
-				_sk.m_wsrot[0] = pValue1.mData[0];
-				_sk.m_wsrot[1] = pValue1.mData[1];
-				_sk.m_wsrot[2] = pValue1.mData[2];
-				printf("            %.4f %.4f %.4f\t(global)\n",
-					   pValue1.mData[0],
-					   pValue1.mData[1],
-					   pValue1.mData[2]);
+				_sk.m_wsrot = vec3_f(
+					pValue1.mData[0], pValue1.mData[1], pValue1.mData[2]);
+				printvec3f(_sk.m_wsrot, "global");
+
 				pValue1 = lMatrix.GetS();
-				_sk.m_wsscl[0] = pValue1.mData[0];
-				_sk.m_wsscl[1] = pValue1.mData[1];
-				_sk.m_wsscl[2] = pValue1.mData[2];
-				printf("            %.4f %.4f %.4f\t(global)\n",
-					   pValue1.mData[0],
-					   pValue1.mData[1],
-					   pValue1.mData[2]);
+				_sk.m_wsscl = vec3_f(
+					pValue1.mData[0], pValue1.mData[1], pValue1.mData[2]);
+				printvec3f(_sk.m_wsscl, "global");
 
 				joint_to_world = false;
 			}
             lMatrix = lCluster->GetTransformLinkMatrix(lMatrix);
 			// printf("%s\n", matrixToStr(lMatrix).c_str());
 			FbxVector4 pValue2 = lMatrix.GetT();
-			_sk.m_joints[j_idx].m_lspos[0] = pValue2.mData[0];
-			_sk.m_joints[j_idx].m_lspos[1] = pValue2.mData[1];
-			_sk.m_joints[j_idx].m_lspos[2] = pValue2.mData[2];
-			printf("            %.4f %.4f %.4f\t%s\n",
-				   pValue2.mData[0],
-				   pValue2.mData[1],
-				   pValue2.mData[2],
-			   	   clustername.c_str());
+			_sk.m_joints[j_idx].m_lspos = vec3_f(
+				pValue2.mData[0], pValue2.mData[1], pValue2.mData[2]);
+			printvec3f(_sk.m_joints[j_idx].m_lspos, clustername.c_str());
+
 			pValue2 = lMatrix.GetR();
-			_sk.m_joints[j_idx].m_lsrot[0] = pValue2.mData[0];
-			_sk.m_joints[j_idx].m_lsrot[1] = pValue2.mData[1];
-			_sk.m_joints[j_idx].m_lsrot[2] = pValue2.mData[2];
-			printf("            %.4f %.4f %.4f\t%s\n",
-				   pValue2.mData[0],
-				   pValue2.mData[1],
-				   pValue2.mData[2],
-			   	   clustername.c_str());
+			_sk.m_joints[j_idx].m_lsrot = vec3_f(
+				pValue2.mData[0], pValue2.mData[1], pValue2.mData[2]);
+			printvec3f(_sk.m_joints[j_idx].m_lsrot, clustername.c_str());
+
 			pValue2 = lMatrix.GetS();
-			_sk.m_joints[j_idx].m_lsscl[0] = pValue2.mData[0];
-			_sk.m_joints[j_idx].m_lsscl[1] = pValue2.mData[1];
-			_sk.m_joints[j_idx].m_lsscl[2] = pValue2.mData[2];
-			printf("            %.4f %.4f %.4f\t%s\n",
-				   pValue2.mData[0],
-				   pValue2.mData[1],
-				   pValue2.mData[2],
-			   	   clustername.c_str());
+			_sk.m_joints[j_idx].m_lsscl = vec3_f(
+				pValue2.mData[0], pValue2.mData[1], pValue2.mData[2]);
+			printvec3f(_sk.m_joints[j_idx].m_lsscl, clustername.c_str());
 
 			// get control point blending weights and joint indices
 			std::string lString1 = "        Link Indices: ";
@@ -375,9 +363,9 @@ void processMesh(FbxNode * node, MeshFBX &mesh)
 	size_t vert_idx = 0;
 
 	for( size_t i = 0; i < mesh.m_triangles.size(); i++ ) {
-		vec3f norm[3];
-		vec3f tang[3];
-		vec3f uv[3];
+		vec3_f norm[3];
+		vec3_f tang[3];
+		vec3_f uv[3];
 		TriFBX &_tri = mesh.m_triangles[i];
 		//printf("Tri #%u\n", (unsigned int)i);
 
@@ -387,30 +375,24 @@ void processMesh(FbxNode * node, MeshFBX &mesh)
 			CtrlPnt &currCtrlPnt = mesh.m_ctrlpnts[cp_idx];
 
 			// position
-			setVec3(currCtrlPnt.m_pos, mesh.m_verts[vert_idx].m_pos);
+			mesh.m_verts[vert_idx].m_pos = currCtrlPnt.m_pos;
 			// uv
 			getVertInfo<FbxGeometryElementUV*>(currmesh->GetElementUV(), cp_idx,
 											   currmesh->GetTextureUVIndex(i, j),
 											   uv[j]);
-			setVec2(uv[j], mesh.m_verts[vert_idx].m_uv);
+			mesh.m_verts[vert_idx].m_uv = vec2_f(uv[j].x(), uv[j].y());
 			// normals
 			getVertInfo<FbxGeometryElementNormal*>(currmesh->GetElementNormal(),
 												   cp_idx, vert_idx, norm[j]);
-			setVec3(norm[j], mesh.m_verts[vert_idx].m_norm);
+			mesh.m_verts[vert_idx].m_norm = norm[j];
 			// tangent
 			getVertInfo<FbxGeometryElementTangent*>(currmesh->GetElementTangent(),
 													cp_idx, vert_idx, tang[j]);
-			setVec3(tang[j], mesh.m_verts[vert_idx].m_tang);
+			mesh.m_verts[vert_idx].m_tang = tang[j];
 			// joints
-			mesh.m_verts[vert_idx].m_joint[0] = currCtrlPnt.m_joint[0];
-			mesh.m_verts[vert_idx].m_joint[1] = currCtrlPnt.m_joint[1];
-			mesh.m_verts[vert_idx].m_joint[2] = currCtrlPnt.m_joint[2];
-			mesh.m_verts[vert_idx].m_joint[3] = currCtrlPnt.m_joint[3];
+			mesh.m_verts[vert_idx].m_joint = vec4_u(currCtrlPnt.m_joint);
 			// blends
-			mesh.m_verts[vert_idx].m_jblend[0] = currCtrlPnt.m_blend[0];
-			mesh.m_verts[vert_idx].m_jblend[1] = currCtrlPnt.m_blend[1];
-			mesh.m_verts[vert_idx].m_jblend[2] = currCtrlPnt.m_blend[2];
-			mesh.m_verts[vert_idx].m_jblend[3] = currCtrlPnt.m_blend[3];
+			mesh.m_verts[vert_idx].m_jblend = vec4_f(currCtrlPnt.m_blend);
 			/*
 			printf("\t pos_%u: %f, %f, %f\n", j, currCtrlPnt.m_pos[0],
 				currCtrlPnt.m_pos[1], currCtrlPnt.m_pos[2]);
@@ -418,7 +400,7 @@ void processMesh(FbxNode * node, MeshFBX &mesh)
 			printf("\t tan_%u: %f, %f, %f\n", j, tang[j][0], tang[j][1], tang[j][2]);
 			printf("\t  uv_%u: %f, %f\n", j, uv[j][0], uv[j][1]);
 			*/
-			_tri.m_indices[j] = vert_idx;
+			_tri.m_indices.data[j] = vert_idx;
 			vert_idx += 1;
 		}
 	}
@@ -480,14 +462,14 @@ dd_array<MatFBX> processMats(FbxNode * node)
 	size_t mat_count = node->GetMaterialCount();
 	dd_array<MatFBX> mats(mat_count);
 
-	auto transferD3 = [&] (FbxDouble3 &source, vec3f sink) {
-		sink[0] = static_cast<float>(source.mData[0]);
-		sink[1] = static_cast<float>(source.mData[1]);
-		sink[2] = static_cast<float>(source.mData[2]);
+	auto transferD3 = [&] (FbxDouble3 &source, vec3_f sink) {
+		sink.x() = static_cast<float>(source.mData[0]);
+		sink.y() = static_cast<float>(source.mData[1]);
+		sink.z() = static_cast<float>(source.mData[2]);
 	};
 
-	auto flushSink = [] (vec3f &sink) {
-		sink[0] = sink[1] = sink[2] = 0.f;
+	auto flushSink = [] (vec3_f &sink) {
+		sink.x() = sink.y() = sink.z() = 0.f;
 	};
 
 	auto getTexChannels = [&](FbxProperty& _prop,

@@ -18,12 +18,12 @@ template<class T>
 void getVertInfo(T info_type,
 				 const size_t ctrlpnt_idx,
 				 const size_t polyvert_idx,
-				 vec3f &vec)
+				 vec3_f &vec)
 {
 	if (!info_type) {
-		vec[0] = 0;
-		vec[1] = 0;
-		vec[2] = 0;
+		vec.x() = 0;
+		vec.y() = 0;
+		vec.z() = 0;
 		return;
 	}
 	std::string type_id = typeid(T).name();
@@ -35,18 +35,18 @@ void getVertInfo(T info_type,
 			switch( info_type->GetReferenceMode() ) {
 				case FbxGeometryElement::eDirect:
 					if( typeid(T) == typeid(FbxGeometryElementUV*) ) {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[0]);
-						vec[1] = 1 - static_cast<float>(
+						vec.y() = 1 - static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[1]);
-						vec[2] = 0.f;
+						vec.z() = 0.f;
 					}
 					else {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[0]);
-						vec[1] = static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[1]);
-						vec[2] = static_cast<float>(
+						vec.z() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[2]);
 					}
 					break;
@@ -54,18 +54,18 @@ void getVertInfo(T info_type,
 				{
 					int index = info_type->GetIndexArray().GetAt(ctrlpnt_idx);
 					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[0]);
-						vec[1] = 1 - static_cast<float>(
+						vec.y() = 1 - static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[1]);
-						vec[2] = 0.f;
+						vec.z() = 0.f;
 					}
 					else {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[0]);
-						vec[1] = static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[1]);
-						vec[2] = static_cast<float>(
+						vec.z() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[2]);
 					}
 					break;
@@ -79,18 +79,18 @@ void getVertInfo(T info_type,
 			switch( info_type->GetReferenceMode() ) {
 				case FbxGeometryElement::eDirect:
 					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
-						vec[1] = 1 - static_cast<float>(
+						vec.y() = 1 - static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[1]);
-						vec[2] = 0.f;
+						vec.z() = 0.f;
 					}
 					else {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
-						vec[1] = static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[1]);
-						vec[2] = static_cast<float>(
+						vec.z() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[2]);
 					}
 					break;
@@ -98,18 +98,18 @@ void getVertInfo(T info_type,
 				{
 					int index = info_type->GetIndexArray().GetAt(ctrlpnt_idx);
 					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
-						vec[1] = 1 - static_cast<float>(
+						vec.y() = 1 - static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[1]);
-						vec[2] = 0.f;
+						vec.z() = 0.f;
 					}
 					else {
-						vec[0] = static_cast<float>(
+						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[0]);
-						vec[1] = static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[1]);
-						vec[2] = static_cast<float>(
+						vec.z() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[2]);
 					}
 					break;
