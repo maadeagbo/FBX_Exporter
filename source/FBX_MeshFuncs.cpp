@@ -39,7 +39,7 @@ void processAsset(FbxNode* node, AssetFBX &_asset)
 	_asset.addMesh(mesh, ebos);
 
 	printf("Mesh name ='%s'(%lu)\n",
-		   mesh.m_id._str(), mesh.m_id.gethash());
+		   mesh.m_id.str(), mesh.m_id.gethash());
 
 	// export DDM (mesh), DDA (animations), and DDB (skeleton) files
 	_asset.exportMesh();
@@ -66,7 +66,7 @@ void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset)
 		this_j.m_idx = _sk.m_numJoints;
 		this_j.m_parent = index;
 		printf("Skeleton Name: %s (%u : %u)\n",
-				this_j.m_name._str(),
+				this_j.m_name.str(),
 				this_j.m_idx,
 				this_j.m_parent);
 		// increment joint counter and index of next parent
@@ -162,13 +162,15 @@ void getCurveInfo(
 	// save grabbed frames
 	// assume this joints x, y, and z keyframes have the same frames
 	for (unsigned i = 0; i < frameX.size(); i++) {
-		//
-		printf("        %u-> %.3f %.3f %.3f\n", 
-			   (unsigned)frameX[i].x(),
-			   frameX[i].y(),
-			   frameY[i].y(),
-			   frameZ[i].y()
-		);
+		unsigned frame_num = (unsigned)frameX[i].x();
+		if (animclip.m_clip.count(frame_num) == 0) {
+			animclip.m_clip[frame_num] = PoseSample();
+			animclip.m_clip[frame_num].pose.resize(animclip.m_joints);
+			animclip.m_clip[frame_num].logged_pose.resize(animclip.m_joints);
+		}
+		animclip.m_clip[frame_num].pose[jnt_idx].rot = 
+			vec3_f(frameX[i].y(), frameY[i].y(), frameZ[i].y());
+		animclip.m_clip[frame_num].logged_pose[jnt_idx] = 1;
 	}
 }
 
@@ -228,8 +230,33 @@ void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
         printf("%s\n", lOutputString.Buffer());
 
 		_asset.m_clips[i].m_joints = _asset.m_skeleton.m_numJoints;
-        processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
-    }
+		processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
+		
+		for (unsigned j = 0; j < _asset.m_clips[i].m_joints; j++) {
+			vec3_f last_saved = vec3_f(0, 0, 0);
+			printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str() );
+			for(auto& p : _asset.m_clips[i].m_clip) {
+				if(p.second.logged_pose[j] == 1) {
+					last_saved = p.second.pose[j].rot;
+					printf("\t\t %u->\t %.3f, %.3f, %.3f\n",
+						p.first,
+						p.second.pose[j].rot.x(),
+						p.second.pose[j].rot.y(),
+						p.second.pose[j].rot.z()
+					);
+				}
+				else { // pose is in default. Set to last logged pose info
+					p.second.pose[j].rot = last_saved;
+				}
+				// printf("\t\t %u->\t %.3f, %.3f, %.3f\n",
+				// 	p.first,
+				// 	p.second.pose[j].rot.x(),
+				// 	p.second.pose[j].rot.y(),
+				// 	p.second.pose[j].rot.z()
+				// );
+			}
+		}
+	}
 }
 
 /// \brief Process node to get skeleton structure with tranforms
@@ -279,7 +306,7 @@ void processSkeleton(FbxGeometry *_geom, MeshFBX &mesh, SkelFbx& _sk)
 			std::string clustername = (char *)lCluster->GetLink()->GetName();
 			int j_idx = -1;
 			for (size_t k = 0; k < _sk.m_numJoints; k++) {
-				std::string id = _sk.m_joints[k].m_name._str();
+				std::string id = _sk.m_joints[k].m_name.str();
 				if (id == clustername) {
 					j_idx = _sk.m_joints[k].m_idx;
 					break;

@@ -144,16 +144,16 @@ struct cbuff
 		return hash < other.hash;
 	}
 
-	void set(const char* _str)
+	void set(const char* cstr)
 	{
-		hash = getCharHash(_str);
-		snprintf(str, T, "%s", _str);
+		hash = getCharHash(cstr);
+		snprintf(c_str, T, "%s", cstr);
 	}
 
-	const char* _str() const { return str; }
+	const char* str() const { return c_str; }
 	size_t gethash() const { return hash; }
 private:
-	char str[T];
+	char c_str[T];
 	size_t hash;
 };
 
@@ -287,14 +287,15 @@ struct MatFBX
 
 struct AnimSample
 {
-	vec3_f		rot = {0, 0, 0};
-	//vec3_f		pos;
+	vec3_f		rot;
+	//vec3_f	pos;
 	//float		scal;
 };
 
 struct PoseSample
 {
 	dd_array<AnimSample> pose;
+	dd_array<unsigned> logged_pose;
 };
 
 struct AnimClipFBX

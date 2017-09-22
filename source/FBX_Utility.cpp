@@ -9,7 +9,7 @@ size_t numTabs = 0;
 /// \param ebo_data Lists buffer sizes for each material (sorted by index)
 void AssetFBX::addMesh(MeshFBX & _mesh, dd_array<size_t> &ebo_data)
 {
-	m_id.set(_mesh.m_id._str());
+	m_id.set(_mesh.m_id.str());
 	m_verts = std::move(_mesh.m_verts);
 
 	printf("Materials\n");
@@ -20,7 +20,7 @@ void AssetFBX::addMesh(MeshFBX & _mesh, dd_array<size_t> &ebo_data)
 	for( size_t i = 0; i < ebo_data.size(); i++ ) {
 		printf("ebo #%lu: %lu\n", i, ebo_data[i]);
 		if( ebo_data[i] > 0 ) {
-			printf("\t%s \tregistered at: %u\n", m_matbin[i].m_id._str(), idx);
+			printf("\t%s \tregistered at: %u\n", m_matbin[i].m_id.str(), idx);
 			valid_mats[idx] = i;
 			mat_idx[(uint8_t)i] = idx;
 			idx += 1;
@@ -89,7 +89,7 @@ void AssetFBX::exportSkeleton()
 		outfile << "<joint>\n";
 		JointFBX& _j = m_skeleton.m_joints[i];
 		snprintf(lineBuff, sizeof(lineBuff), "%s %u %u\n",
-				 _j.m_name._str(),
+				 _j.m_name.str(),
 			 	 _j.m_idx,
 			 	 _j.m_parent);
 		outfile << lineBuff;
@@ -116,7 +116,7 @@ void AssetFBX::exportSkeleton()
 void AssetFBX::exportMesh()
 {
 	char lineBuff[256];
-	snprintf(lineBuff, sizeof(lineBuff), "%s.ddm", m_id._str());
+	snprintf(lineBuff, sizeof(lineBuff), "%s.ddm", m_id.str());
 	std::fstream outfile;
 	outfile.open(lineBuff, std::ofstream::out);
 
@@ -127,7 +127,7 @@ void AssetFBX::exportMesh()
 	}
 
 	// name
-	snprintf(lineBuff, sizeof(lineBuff), "%s", m_id._str());
+	snprintf(lineBuff, sizeof(lineBuff), "%s", m_id.str());
 	outfile << "<name>\n" << lineBuff << "\n</name>\n";
 	// buffer sizes
 	outfile << "<buffer>\n";
@@ -142,34 +142,34 @@ void AssetFBX::exportMesh()
 	for (size_t i = 0; i < m_matbin.size(); i++) {
 		MatFBX& _m = m_matbin[i];
 		outfile << "<material>\n";
-		snprintf(lineBuff, sizeof(lineBuff), "n %s", _m.m_id._str());
+		snprintf(lineBuff, sizeof(lineBuff), "n %s", _m.m_id.str());
 		outfile << lineBuff << "\n";
 		if (static_cast<bool>(_m.m_textypes & MatType::DIFF)) {
-			snprintf(lineBuff, sizeof(lineBuff), "D %s", _m.m_diffmap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "D %s", _m.m_diffmap.str());
 			outfile << lineBuff << "\n";
 		}
 		if (static_cast<bool>(_m.m_textypes & MatType::NORMAL)) {
-			snprintf(lineBuff, sizeof(lineBuff), "N %s", _m.m_normmap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "N %s", _m.m_normmap.str());
 			outfile << lineBuff << "\n";
 		}
 		if (static_cast<bool>(_m.m_textypes & MatType::SPEC)) {
-			snprintf(lineBuff, sizeof(lineBuff), "S %s", _m.m_specmap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "S %s", _m.m_specmap.str());
 			outfile << lineBuff << "\n";
 		}
 		if (static_cast<bool>(_m.m_textypes & MatType::ROUGH)) {
-			snprintf(lineBuff, sizeof(lineBuff), "R %s", _m.m_roughmap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "R %s", _m.m_roughmap.str());
 			outfile << lineBuff << "\n";
 		}
 		if (static_cast<bool>(_m.m_textypes & MatType::METAL)) {
-			snprintf(lineBuff, sizeof(lineBuff), "M %s", _m.m_metalmap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "M %s", _m.m_metalmap.str());
 			outfile << lineBuff << "\n";
 		}
 		if (static_cast<bool>(_m.m_textypes & MatType::EMIT)) {
-			snprintf(lineBuff, sizeof(lineBuff), "E %s", _m.m_emitmap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "E %s", _m.m_emitmap.str());
 			outfile << lineBuff << "\n";
 		}
 		if (static_cast<bool>(_m.m_textypes & MatType::AO)) {
-			snprintf(lineBuff, sizeof(lineBuff), "A %s", _m.m_aomap._str());
+			snprintf(lineBuff, sizeof(lineBuff), "A %s", _m.m_aomap.str());
 			outfile << lineBuff << "\n";
 		}
 		// vector properties
