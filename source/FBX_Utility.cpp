@@ -250,3 +250,9 @@ void AssetFBX::exportMesh()
 
 	outfile.close();
 }
+
+/// \brief Export animation to format specified by dd_entity_map.txt
+void AssetFBX::exportAnimation()
+{
+	
+}

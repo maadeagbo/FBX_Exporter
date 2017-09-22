@@ -44,6 +44,7 @@ void processAsset(FbxNode* node, AssetFBX &_asset)
 	// export DDM (mesh), DDA (animations), and DDB (skeleton) files
 	_asset.exportMesh();
 	_asset.exportSkeleton();
+	_asset.exportAnimation();
 }
 
 /// \brief Process node to get skeleton heirarchy
@@ -209,7 +210,11 @@ void processAnimLayer(
 /// \param node FbxNode with animation information
 /// \param animstack FbxAnimStack with animation information
 /// \param _asset AssetFBX that holds to be exported data
-void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
+void processAnimation(FbxNode* node,
+					  FbxAnimStack *animstack,
+					  AssetFBX &_asset,
+					  const float framerate,
+					  const char* stack_name)
 {
 	int nbAnimLayers = animstack->GetMemberCount<FbxAnimLayer>();
 	FbxString lOutputString;
@@ -224,11 +229,13 @@ void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
     {
         FbxAnimLayer* lAnimLayer = animstack->GetMember<FbxAnimLayer>(i);
 
-        lOutputString = "AnimLayer ";
+        lOutputString = stack_name;
+        lOutputString += "_animLayer_";
         lOutputString += i;
-        lOutputString += "\n";
-        printf("%s\n", lOutputString.Buffer());
+		printf("%s\n\n", lOutputString.Buffer());
 
+		_asset.m_clips[i].m_id.set(lOutputString.Buffer());
+		_asset.m_clips[i].m_framerate = framerate;
 		_asset.m_clips[i].m_joints = _asset.m_skeleton.m_numJoints;
 		processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
 		
@@ -248,12 +255,6 @@ void processAnimation(FbxNode* node, FbxAnimStack *animstack, AssetFBX &_asset)
 				else { // pose is in default. Set to last logged pose info
 					p.second.pose[j].rot = last_saved;
 				}
-				// printf("\t\t %u->\t %.3f, %.3f, %.3f\n",
-				// 	p.first,
-				// 	p.second.pose[j].rot.x(),
-				// 	p.second.pose[j].rot.y(),
-				// 	p.second.pose[j].rot.z()
-				// );
 			}
 		}
 	}
@@ -385,7 +386,7 @@ void processMesh(FbxNode * node, MeshFBX &mesh)
 {
 	FbxMesh* currmesh = (FbxMesh*)node->GetMesh();
 	mesh.m_triangles.resize(currmesh->GetPolygonCount());
-	printf("Num tris: %u\n", (uint32_t)mesh.m_triangles.size());
+	printf("\nNum tris: %u\n", (uint32_t)mesh.m_triangles.size());
 	mesh.m_verts.resize(mesh.m_triangles.size() * 3);
 	size_t vert_idx = 0;
 

@@ -5,7 +5,11 @@
 
 void processAsset(FbxNode* node, AssetFBX &_asset);
 void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset);
-void processAnimation(FbxNode *node, FbxAnimStack *animstack, AssetFBX &_asset);
+void processAnimation(FbxNode *node,
+					  FbxAnimStack *animstack,
+					  AssetFBX &_asset,
+					  const float framerate,
+					  const char* stack_name);
 
 // functions for mesh and animation parsing
 void processMesh(FbxNode *node, MeshFBX &new_mesh);

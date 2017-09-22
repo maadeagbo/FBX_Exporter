@@ -323,4 +323,5 @@ struct AssetFBX
 	void addMesh(MeshFBX& _mesh, dd_array<size_t> &ebo_data);
 	void exportMesh();
 	void exportSkeleton();
+	void exportAnimation();
 };

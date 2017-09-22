@@ -55,7 +55,8 @@ int main(const int argc, const char** argv)
 		_importer->Destroy();
 		// get global time info
 		FbxTime::EMode g_timemode = fbx_scene->GetGlobalSettings().GetTimeMode();
-		printf("Scene frame rate: %.3f(s)", FbxTime::GetFrameRate(g_timemode));
+		const float fr_rate = FbxTime::GetFrameRate(g_timemode);
+		printf("Scene frame rate: %.3f(s)", fr_rate);
 
 		// Triangulate all meshes (buggy)
 		FbxGeometryConverter lGeomConverter(sdkManager);
@@ -77,6 +78,15 @@ int main(const int argc, const char** argv)
 					}
 				}
 			}
+			printf("\n\n---------\nAnimation\n---------\n\n");
+			for (int i = 0; i < fbx_scene->GetSrcObjectCount<FbxAnimStack>(); i++) {
+		        FbxAnimStack* lAnimStack = fbx_scene->GetSrcObject<FbxAnimStack>(i);
+				FbxString lOutputString = lAnimStack->GetName();
+				printf("Animation Stack Name: %s\n", lOutputString.Buffer());
+
+				processAnimation(rootNode, lAnimStack, asset, fr_rate, 
+								 lOutputString.Buffer());
+			}
 			printf("\n\n----\nMesh\n----\n\n");
 			for( int i = 0; i < rootNode->GetChildCount(); i++ ) {
 				FbxNode *_node = rootNode->GetChild(i);
@@ -87,15 +97,6 @@ int main(const int argc, const char** argv)
 						processAsset(_node, asset);
 					}
 				}
-			}
-			printf("\n\n---------\nAnimation\n---------\n\n");
-			for (int i = 0; i < fbx_scene->GetSrcObjectCount<FbxAnimStack>(); i++) {
-		        FbxAnimStack* lAnimStack = fbx_scene->GetSrcObject<FbxAnimStack>(i);
-				FbxString lOutputString = "Animation Stack Name: ";
-        		lOutputString += lAnimStack->GetName();
-				printf("%s\n", lOutputString.Buffer());
-
-				processAnimation(rootNode, lAnimStack, asset);
 			}
 		}
 	}
