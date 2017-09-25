@@ -269,6 +269,8 @@ void AssetFBX::exportAnimation()
 		// framerate
 		snprintf(lineBuff, sizeof(lineBuff), "%.3f", m_clips[i].m_framerate);
 		outfile << "<framerate>\n" << lineBuff << "\n</framerate>\n";
+		// repeat
+		outfile << "<repeat>\n" << 0 << "\n</repeat>\n";
 		// buffer sizes
 		outfile << "<buffer>\n";
 		snprintf(lineBuff, sizeof(lineBuff), "j %u", m_clips[i].m_joints);
