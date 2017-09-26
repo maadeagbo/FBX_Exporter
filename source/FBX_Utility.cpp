@@ -280,8 +280,8 @@ void AssetFBX::exportAnimation()
 		outfile << "</buffer>\n";	
 
 		// animation data
-		outfile << "<animation>\n";
 		for(unsigned j = 0; j < m_clips[i].m_joints; j++) {
+			outfile << "<animation>\n";
 			snprintf(lineBuff, sizeof(lineBuff), "- %u", j);
 			outfile << lineBuff << "\n";
 			for(auto& p : m_clips[i].m_clip) {
@@ -291,8 +291,8 @@ void AssetFBX::exportAnimation()
 					p.second.pose[j].rot.z());
 				outfile << lineBuff << "\n";
 			}
+			outfile << "</animation>\n";
 		}
-		outfile << "</animation>\n";
 
 		outfile.close();
 	}
