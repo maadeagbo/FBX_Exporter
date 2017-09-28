@@ -290,6 +290,11 @@ void AssetFBX::exportAnimation()
 					p.second.pose[j].rot.y(),
 					p.second.pose[j].rot.z());
 				outfile << lineBuff << "\n";
+				snprintf(lineBuff, sizeof(lineBuff), "t %.3f %.3f %.3f",
+					p.second.pose[j].pos.x(),
+					p.second.pose[j].pos.y(),
+					p.second.pose[j].pos.z());
+				outfile << lineBuff << "\n";
 			}
 			outfile << "</animation>\n";
 		}

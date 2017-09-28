@@ -288,7 +288,7 @@ struct MatFBX
 struct AnimSample
 {
 	vec3_f		rot;
-	//vec3_f	pos;
+	vec3_f		pos;
 	//float		scal;
 };
 

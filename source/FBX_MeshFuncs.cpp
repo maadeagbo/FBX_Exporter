@@ -92,7 +92,7 @@ void getCurveInfo(
 	const unsigned jnt_idx)
 {
 	FbxAnimCurve* lAnimCurve = NULL;
-	dd_array<vec2_f> frameX, frameY, frameZ;
+	dd_array<vec2_f> frameR_X, frameR_Y, frameR_Z, frameT_X, frameT_Y, frameT_Z;
 
 	// general curves
 	lAnimCurve = node->LclTranslation.GetCurve(animlayer,
@@ -100,21 +100,21 @@ void getCurveInfo(
     if (lAnimCurve)
     {
         //printf("        TX\n");
-        //DisplayCurve(lAnimCurve);
+        frameT_X = std::move(DisplayCurve(lAnimCurve));
     }
     lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
         //printf("        TY\n");
-        //DisplayCurve(lAnimCurve);
+        frameT_Y = std::move(DisplayCurve(lAnimCurve));
     }
     lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
         //printf("        TZ\n");
-        //DisplayCurve(lAnimCurve);
+        frameT_Z = std::move(DisplayCurve(lAnimCurve));
     }
 
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
@@ -122,21 +122,21 @@ void getCurveInfo(
     if (lAnimCurve)
     {
         //printf("        RX\n");
-		frameX = std::move(DisplayCurve(lAnimCurve));
+		frameR_X = std::move(DisplayCurve(lAnimCurve));
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
         //printf("        RY\n");
-		frameY = std::move(DisplayCurve(lAnimCurve));
+		frameR_Y = std::move(DisplayCurve(lAnimCurve));
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
         //printf("        RZ\n");
-		frameZ = std::move(DisplayCurve(lAnimCurve));
+		frameR_Z = std::move(DisplayCurve(lAnimCurve));
     }
 
     lAnimCurve = node->LclScaling.GetCurve(animlayer,
@@ -162,15 +162,17 @@ void getCurveInfo(
     }
 	// save grabbed frames
 	// assume this joints x, y, and z keyframes have the same frames
-	for (unsigned i = 0; i < frameX.size(); i++) {
-		unsigned frame_num = (unsigned)frameX[i].x();
+	for (unsigned i = 0; i < frameR_X.size(); i++) {
+		unsigned frame_num = (unsigned)frameR_X[i].x();
 		if (animclip.m_clip.count(frame_num) == 0) {
 			animclip.m_clip[frame_num] = PoseSample();
 			animclip.m_clip[frame_num].pose.resize(animclip.m_joints);
 			animclip.m_clip[frame_num].logged_pose.resize(animclip.m_joints);
 		}
 		animclip.m_clip[frame_num].pose[jnt_idx].rot = 
-			vec3_f(frameX[i].y(), frameY[i].y(), frameZ[i].y());
+			vec3_f(frameR_X[i].y(), frameR_Y[i].y(), frameR_Z[i].y());
+		animclip.m_clip[frame_num].pose[jnt_idx].pos = 
+			vec3_f(frameT_X[i].y(), frameT_Y[i].y(), frameT_Z[i].y());
 		animclip.m_clip[frame_num].logged_pose[jnt_idx] = 1;
 	}
 }
