@@ -93,6 +93,7 @@ void getCurveInfo(
 {
 	FbxAnimCurve* lAnimCurve = NULL;
 	dd_array<vec2_f> frameR_X, frameR_Y, frameR_Z, frameT_X, frameT_Y, frameT_Z;
+	dd_array<vec2_f> max_frames;
 
 	// general curves
 	lAnimCurve = node->LclTranslation.GetCurve(animlayer,
@@ -162,8 +163,8 @@ void getCurveInfo(
     }
 	// save grabbed frames
 	// assume this joints x, y, and z keyframes have the same frames
-	for (unsigned i = 0; i < frameR_X.size(); i++) {
-		unsigned frame_num = (unsigned)frameR_X[i].x();
+	for (unsigned i = 0; i < frameR_Y.size(); i++) {
+		unsigned frame_num = (unsigned)frameR_Y[i].x();
 		if (animclip.m_clip.count(frame_num) == 0) {
 			animclip.m_clip[frame_num] = PoseSample();
 			animclip.m_clip[frame_num].pose.resize(animclip.m_joints);
@@ -171,7 +172,16 @@ void getCurveInfo(
 		}
 		animclip.m_clip[frame_num].pose[jnt_idx].rot = 
 			vec3_f(frameR_X[i].y(), frameR_Y[i].y(), frameR_Z[i].y());
-		animclip.m_clip[frame_num].pose[jnt_idx].pos = 
+		animclip.m_clip[frame_num].logged_pose[jnt_idx] = 1;
+	}
+	for (unsigned i = 0; i < frameT_Y.size(); i++) {
+		unsigned frame_num = (unsigned)frameT_Y[i].x();
+		if (animclip.m_clip.count(frame_num) == 0) {
+			animclip.m_clip[frame_num] = PoseSample();
+			animclip.m_clip[frame_num].pose.resize(animclip.m_joints);
+			animclip.m_clip[frame_num].logged_pose.resize(animclip.m_joints);
+		}
+		animclip.m_clip[frame_num].pose[jnt_idx].pos =
 			vec3_f(frameT_X[i].y(), frameT_Y[i].y(), frameT_Z[i].y());
 		animclip.m_clip[frame_num].logged_pose[jnt_idx] = 1;
 	}
