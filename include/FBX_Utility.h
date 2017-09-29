@@ -134,6 +134,12 @@ static size_t getCharHash(const char* s)
 template <const int T>
 struct cbuff
 {
+	cbuff() { set(""); }
+	cbuff(const char* in_str) { set(in_str); }
+	int compare(const char* in_str)
+	{
+		return strcmp(cstr, in_str);
+	}
 	bool operator==(const cbuff &other) const
 	{
 		return hash == other.hash;
@@ -144,16 +150,23 @@ struct cbuff
 		return hash < other.hash;
 	}
 
-	void set(const char* cstr)
+	void set(const char* in_str)
 	{
+		snprintf(cstr, T, "%s", in_str);
 		hash = getCharHash(cstr);
-		snprintf(c_str, T, "%s", cstr);
 	}
 
-	const char* str() const { return c_str; }
+	template<typename... Args>
+	void format(const char* format_str, const Args&... args)
+	{
+		snprintf(cstr, T, format_str, args...);
+		hash = getCharHash(cstr);
+	}
+
+	const char* str() const { return cstr; }
 	size_t gethash() const { return hash; }
 private:
-	char c_str[T];
+	char cstr[T];
 	size_t hash;
 };
 

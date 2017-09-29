@@ -61,6 +61,7 @@ void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset)
 	// skeleton joint/limb information
 	SkelFbx &_sk = _asset.m_skeleton;
 	size_t next_parent = _sk.m_numJoints - 1;
+	printf("Checking: %s\n", (char *)node->GetName());
 	if (recordbone) {
 		JointFBX &this_j = _sk.m_joints[_sk.m_numJoints];
 		this_j.m_name.set((char *)node->GetName());
@@ -502,7 +503,7 @@ dd_array<MatFBX> processMats(FbxNode * node)
 	size_t mat_count = node->GetMaterialCount();
 	dd_array<MatFBX> mats(mat_count);
 
-	auto transferD3 = [&] (FbxDouble3 &source, vec3_f sink) {
+	auto transferD3 = [&] (FbxDouble3 &source, vec3_f& sink) {
 		sink.x() = static_cast<float>(source.mData[0]);
 		sink.y() = static_cast<float>(source.mData[1]);
 		sink.z() = static_cast<float>(source.mData[2]);
