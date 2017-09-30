@@ -325,6 +325,7 @@ struct AnimClipFBX
 struct AssetFBX
 {
 	struct EboMesh { dd_array<vec3_u> indices; };
+	AssetFBX() : m_matbin(0), m_verts(0), m_ebos(0), m_clips(0) {}
 
 	cbuff<32>			m_id;
 	dd_array<MatFBX> 	m_matbin;
