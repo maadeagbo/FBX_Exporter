@@ -1,6 +1,16 @@
 #include "FBX_MeshFuncs.h"
 #include <vector>
 
+enum class CurveArgs
+{
+	TRANS,
+	ROT,
+	SCALE,
+	X_,
+	Y_,
+	Z_
+};
+
 dd_array<vec2_f> DisplayCurve(FbxAnimCurve* pCurve);
 
 /// \brief Process asset and export file w/ mesh and animation data
@@ -82,6 +92,64 @@ void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset)
 	}
 }
 
+/// \brief Get FbxAnimCurve from CurveArgs
+FbxAnimCurve* getCurve(FbxNode* node,
+					   FbxAnimLayer *animlayer,
+					   const CurveArgs curvetype,
+					   const CurveArgs axis)
+{
+	switch (curvetype) {
+		case CurveArgs::TRANS:
+			switch (axis) {
+				case CurveArgs::X_:
+					return node->LclTranslation.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_X);
+				case CurveArgs::Y_:
+					return node->LclTranslation.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_Y);
+				case CurveArgs::Z_:
+					return node->LclTranslation.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_Z);
+				default:
+					break;
+			}
+			break;
+		case CurveArgs::ROT:
+			switch (axis) {
+				case CurveArgs::X_:
+					return node->LclRotation.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_X);
+				case CurveArgs::Y_:
+					return node->LclRotation.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_Y);
+				case CurveArgs::Z_:
+					return node->LclRotation.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_Z);
+				default:
+					break;
+			}
+			break;
+		case CurveArgs::SCALE:
+			switch (axis) {
+				case CurveArgs::X_:
+					return node->LclScaling.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_X);
+				case CurveArgs::Y_:
+					return node->LclScaling.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_Y);
+				case CurveArgs::Z_:
+					return node->LclScaling.GetCurve(
+						animlayer, FBXSDK_CURVENODE_COMPONENT_Z);
+				default:
+					break;
+			}
+			break;
+		default:
+			break;
+	}
+	return nullptr;
+}
+
 /// \brief Get animation curve data from fbx
 /// \param node FbxNode with animation information
 /// \param animstack FbxAnimLayer with animation information
@@ -102,21 +170,30 @@ void getCurveInfo(
     if (lAnimCurve)
     {
         //printf("        TX\n");
-        frameT_X = std::move(DisplayCurve(lAnimCurve));
+		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
+		if (temp.size() > 0) {
+			frameT_X = std::move(temp);
+		}
     }
     lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
         //printf("        TY\n");
-        frameT_Y = std::move(DisplayCurve(lAnimCurve));
+		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
+		if (temp.size() > 0) {
+			frameT_Y = std::move(temp);
+		}
     }
     lAnimCurve = node->LclTranslation.GetCurve(animlayer,
 											   FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
         //printf("        TZ\n");
-        frameT_Z = std::move(DisplayCurve(lAnimCurve));
+		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
+		if (temp.size() > 0) {
+			frameT_Z = std::move(temp);
+		}
     }
 
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
@@ -124,21 +201,30 @@ void getCurveInfo(
     if (lAnimCurve)
     {
         //printf("        RX\n");
-		frameR_X = std::move(DisplayCurve(lAnimCurve));
+		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
+		if (temp.size() > 0) {
+			frameR_X = std::move(temp);
+		}
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Y);
     if (lAnimCurve)
     {
         //printf("        RY\n");
-		frameR_Y = std::move(DisplayCurve(lAnimCurve));
+		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
+		if (temp.size() > 0) {
+			frameR_Y = std::move(temp);
+		}
     }
     lAnimCurve = node->LclRotation.GetCurve(animlayer,
 											FBXSDK_CURVENODE_COMPONENT_Z);
     if (lAnimCurve)
     {
         //printf("        RZ\n");
-		frameR_Z = std::move(DisplayCurve(lAnimCurve));
+		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
+		if (temp.size() > 0) {
+			frameR_Z = std::move(temp);
+		}
     }
 
     lAnimCurve = node->LclScaling.GetCurve(animlayer,
