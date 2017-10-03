@@ -72,12 +72,6 @@ CREATE_VEC(float, f, 2)
 CREATE_VEC(uint32_t, u, 4)
 CREATE_VEC(uint32_t, u, 3)
 
-// typedef float vec4_f[4];		//< 4 float vector
-// typedef float vec3_f[3];		//< 3 float vector
-// typedef float vec2_f[2];		//< 2 float vector
-// typedef uint32_t vec4_u[4];	//< 4 unsigned int vector
-// typedef uint32_t vec3_f[3];	//< 3 unsigned int vector
-
 // Enum bitwise flags
 template<typename Enum>
 struct EnableBitMaskOperators
@@ -308,7 +302,8 @@ struct AnimSample
 struct PoseSample
 {
 	dd_array<AnimSample> pose;
-	dd_array<unsigned> logged_pose;
+	dd_array<vec3_u> logged_r;
+	dd_array<vec3_u> logged_t;
 };
 
 struct AnimClipFBX

@@ -50,11 +50,6 @@ void processAsset(FbxNode* node, AssetFBX &_asset)
 
 	printf("Mesh name ='%s'(%lu)\n",
 		   mesh.m_id.str(), mesh.m_id.gethash());
-
-	// export DDM (mesh), DDA (animations), and DDB (skeleton) files
-	_asset.exportMesh();
-	_asset.exportSkeleton();
-	_asset.exportAnimation();
 }
 
 /// \brief Process node to get skeleton heirarchy
@@ -150,6 +145,26 @@ FbxAnimCurve* getCurve(FbxNode* node,
 	return nullptr;
 }
 
+/// \brief Get keyframes from animation curve
+dd_array<vec2_f> getKeyFrames(FbxAnimCurve* animCurve, const unsigned numFrames)
+{
+	dd_array<vec2_f> output(numFrames);
+	FbxTime   lKeyTime;
+	float   lKeyValue;
+	char    lTimeString[256];
+
+	for (unsigned i = 0; i < numFrames; i++) {
+		// get value and frame number
+		lKeyValue = static_cast<float>(animCurve->KeyGetValue(i));
+		lKeyTime = animCurve->KeyGetTime(i);
+
+		char* frame_num = lKeyTime.GetTimeString(lTimeString, FbxUShort(256));
+		output[i].data[0] = std::strtod(frame_num, nullptr);
+		output[i].data[1] = lKeyValue;
+	}
+	return output;
+}
+
 /// \brief Get animation curve data from fbx
 /// \param node FbxNode with animation information
 /// \param animstack FbxAnimLayer with animation information
@@ -161,116 +176,45 @@ void getCurveInfo(
 	const unsigned jnt_idx)
 {
 	FbxAnimCurve* lAnimCurve = NULL;
-	dd_array<vec2_f> frameR_X, frameR_Y, frameR_Z, frameT_X, frameT_Y, frameT_Z;
-	dd_array<vec2_f> max_frames;
+	dd_array<vec2_f> frame_X, frame_Y, frame_Z;
 
-	// general curves
-	lAnimCurve = node->LclTranslation.GetCurve(animlayer,
-											   FBXSDK_CURVENODE_COMPONENT_X);
-    if (lAnimCurve)
-    {
-        //printf("        TX\n");
-		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
-		if (temp.size() > 0) {
-			frameT_X = std::move(temp);
-		}
-    }
-    lAnimCurve = node->LclTranslation.GetCurve(animlayer,
-											   FBXSDK_CURVENODE_COMPONENT_Y);
-    if (lAnimCurve)
-    {
-        //printf("        TY\n");
-		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
-		if (temp.size() > 0) {
-			frameT_Y = std::move(temp);
-		}
-    }
-    lAnimCurve = node->LclTranslation.GetCurve(animlayer,
-											   FBXSDK_CURVENODE_COMPONENT_Z);
-    if (lAnimCurve)
-    {
-        //printf("        TZ\n");
-		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
-		if (temp.size() > 0) {
-			frameT_Z = std::move(temp);
-		}
-    }
+	// set animations
+	CurveArgs order[] = { CurveArgs::X_, CurveArgs::Y_, CurveArgs::Z_ };
+	dd_array<vec2_f> bin[] = { frame_X, frame_Y, frame_Z };
 
-    lAnimCurve = node->LclRotation.GetCurve(animlayer,
-											FBXSDK_CURVENODE_COMPONENT_X);
-    if (lAnimCurve)
-    {
-        //printf("        RX\n");
-		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
-		if (temp.size() > 0) {
-			frameR_X = std::move(temp);
-		}
-    }
-    lAnimCurve = node->LclRotation.GetCurve(animlayer,
-											FBXSDK_CURVENODE_COMPONENT_Y);
-    if (lAnimCurve)
-    {
-        //printf("        RY\n");
-		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
-		if (temp.size() > 0) {
-			frameR_Y = std::move(temp);
-		}
-    }
-    lAnimCurve = node->LclRotation.GetCurve(animlayer,
-											FBXSDK_CURVENODE_COMPONENT_Z);
-    if (lAnimCurve)
-    {
-        //printf("        RZ\n");
-		dd_array<vec2_f> temp = std::move(DisplayCurve(lAnimCurve));
-		if (temp.size() > 0) {
-			frameR_Z = std::move(temp);
-		}
-    }
+	for (auto& transform : { CurveArgs::ROT, CurveArgs::TRANS }) {
+		// loop thru x, y, and z axis
+		for (unsigned idx = 0; idx < 3; idx++) {
+			lAnimCurve = getCurve(node, animlayer, transform, order[idx]);
+			if (lAnimCurve) {
+				bin[idx] = getKeyFrames(lAnimCurve, lAnimCurve->KeyGetCount());
+				// fill in animation for particular axis
+				for (unsigned i = 0; i < bin[idx].size(); i++) {
+					unsigned frame_num = (unsigned)bin[idx][i].x();
+					
+					// if clause should only execute once 
+					if (animclip.m_clip.count(frame_num) == 0) { 
+						animclip.m_clip[frame_num] = PoseSample();
+						animclip.m_clip[frame_num].pose.resize(
+							animclip.m_joints);
+						animclip.m_clip[frame_num].logged_r.resize(
+							animclip.m_joints);
+						animclip.m_clip[frame_num].logged_t.resize(
+							animclip.m_joints);
+					}
+					// fill in dictionary of animations
+					dd_array<vec3_u>& log = (transform == CurveArgs::ROT) ?
+						animclip.m_clip[frame_num].logged_r :
+						animclip.m_clip[frame_num].logged_t;
+					vec3_f& trans = (transform == CurveArgs::ROT) ?
+						animclip.m_clip[frame_num].pose[jnt_idx].rot :
+						animclip.m_clip[frame_num].pose[jnt_idx].pos;
 
-    lAnimCurve = node->LclScaling.GetCurve(animlayer,
-										   FBXSDK_CURVENODE_COMPONENT_X);
-    if (lAnimCurve)
-    {
-        //printf("        SX\n");
-        //DisplayCurve(lAnimCurve);
-    }
-    lAnimCurve = node->LclScaling.GetCurve(animlayer,
-										   FBXSDK_CURVENODE_COMPONENT_Y);
-    if (lAnimCurve)
-    {
-        //printf("        SY\n");
-        //DisplayCurve(lAnimCurve);
-    }
-    lAnimCurve = node->LclScaling.GetCurve(animlayer,
-										   FBXSDK_CURVENODE_COMPONENT_Z);
-    if (lAnimCurve)
-    {
-        //printf("        SZ\n");
-        //DisplayCurve(lAnimCurve);
-    }
-	// save grabbed frames
-	// assume this joints x, y, and z keyframes have the same frames
-	for (unsigned i = 0; i < frameR_Y.size(); i++) {
-		unsigned frame_num = (unsigned)frameR_Y[i].x();
-		if (animclip.m_clip.count(frame_num) == 0) {
-			animclip.m_clip[frame_num] = PoseSample();
-			animclip.m_clip[frame_num].pose.resize(animclip.m_joints);
-			animclip.m_clip[frame_num].logged_pose.resize(animclip.m_joints);
+					trans.data[idx] = bin[idx][i].y();
+					log[jnt_idx].data[idx] = 1;
+				}
+			}
 		}
-		animclip.m_clip[frame_num].pose[jnt_idx].rot = 
-			vec3_f(frameR_X[i].y(), frameR_Y[i].y(), frameR_Z[i].y());
-		animclip.m_clip[frame_num].logged_pose[jnt_idx] = 1;
-	}
-	for (unsigned i = 0; i < frameT_Y.size(); i++) {
-		unsigned frame_num = (unsigned)frameT_Y[i].x();
-		if (animclip.m_clip.count(frame_num) == 0) {
-			animclip.m_clip[frame_num] = PoseSample();
-			animclip.m_clip[frame_num].pose.resize(animclip.m_joints);
-			animclip.m_clip[frame_num].logged_pose.resize(animclip.m_joints);
-		}
-		animclip.m_clip[frame_num].pose[jnt_idx].pos =
-			vec3_f(frameT_X[i].y(), frameT_Y[i].y(), frameT_Z[i].y());
-		animclip.m_clip[frame_num].logged_pose[jnt_idx] = 1;
 	}
 }
 
@@ -342,17 +286,14 @@ void processAnimation(FbxNode* node,
 			vec3_f last_saved = vec3_f(0, 0, 0);
 			printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str() );
 			for(auto& p : _asset.m_clips[i].m_clip) {
-				if(p.second.logged_pose[j] == 1) {
-					last_saved = p.second.pose[j].rot;
-					printf("\t\t %u->\t %.3f, %.3f, %.3f\n",
-						p.first,
-						p.second.pose[j].rot.x(),
-						p.second.pose[j].rot.y(),
-						p.second.pose[j].rot.z()
-					);
-				}
-				else { // pose is in default. Set to last logged pose info
-					p.second.pose[j].rot = last_saved;
+				// rotations
+				for (unsigned k = 0; k < 3; k++) {
+					if (p.second.logged_r[j].data[k] == 1) {
+						last_saved.data[k] = p.second.pose[j].rot.data[k];
+					}
+					else { // pose is in default. Set to last logged pose info
+						//p.second.pose[j].rot.data[k] = last_saved.data[k];
+					}
 				}
 			}
 		}

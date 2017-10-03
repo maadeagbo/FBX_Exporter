@@ -86,6 +86,8 @@ int main(const int argc, const char** argv)
 
 				processAnimation(rootNode, lAnimStack, asset, fr_rate, 
 								 lOutputString.Buffer());
+				// export DDA (animations)
+				asset.exportAnimation();
 			}
 			printf("\n\n----\nMesh\n----\n\n");
 			for( int i = 0; i < rootNode->GetChildCount(); i++ ) {
@@ -95,6 +97,10 @@ int main(const int argc, const char** argv)
 					FbxNodeAttribute::EType type = attrib->GetAttributeType();
 					if( type == fbxsdk::FbxNodeAttribute::eMesh ) {
 						processAsset(_node, asset);
+						// export DDM (mesh)
+						asset.exportMesh();
+						// export DDB (skeleton)
+						asset.exportSkeleton();
 					}
 				}
 			}
