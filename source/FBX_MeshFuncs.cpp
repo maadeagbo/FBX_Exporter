@@ -210,8 +210,26 @@ void getCurveInfo(
 						animclip.m_clip[frame_num].pose[jnt_idx].rot :
 						animclip.m_clip[frame_num].pose[jnt_idx].pos;
 
-					trans.data[idx] = bin[idx][i].y();
-					log[jnt_idx].data[idx] = 1;
+					if (transform == CurveArgs::TRANS) {
+						switch (idx) {
+							case 1:
+								trans.data[idx + 1] = bin[idx][i].y();
+								log[jnt_idx].data[idx] = 1;
+								break;
+							case 2:
+								trans.data[idx - 1] = bin[idx][i].y();
+								log[jnt_idx].data[idx] = 1;
+								break;
+							default:
+								trans.data[idx] = -bin[idx][i].y();
+								log[jnt_idx].data[idx] = 1;
+								break;
+						}
+					}
+					else {
+						trans.data[idx] = bin[idx][i].y();
+						log[jnt_idx].data[idx] = 1;
+					}
 				}
 			}
 		}
