@@ -7,11 +7,50 @@
 
 #include <fbxsdk.h>
 
+enum class FbxExport
+{
+	NONE = 0x0,
+	MESH = 0x1,
+	ANIMATION = 0x2,
+	SKELETON = 0x4,
+	VICON = 0x8
+};
+template<>
+struct EnableBitMaskOperators<FbxExport> { static const bool enable = true; };
+
 int main(const int argc, const char** argv)
 {
+	const char* help = "Arguments for export: "
+		"\n\t-f\tfile to read"
+		"\n\t-m\tmesh"
+		"\n\t-a\tanimation"
+		"\n\t-s\tskeleton"
+		"\n\t-v\tvicon\n";
+	cbuff<512> fbx_to_read;
+	FbxExport exportFlags = FbxExport::NONE;
+
 	if( argc == 1 ) {
-		printf("Provide file to analyze for FBX generation\n");
+		printf("%s\n", help);
 		return 0;
+	}
+	else {
+		for (unsigned i = 1; i < argc; i++) {
+			if (strcmp(argv[i], "-f") == 0) {			// grab fbx file
+				fbx_to_read.set(argv[i + 1]);
+			}
+			else if(strcmp(argv[i], "-m") == 0) {		// mesh flag
+				exportFlags |= FbxExport::MESH;
+			}
+			else if(strcmp(argv[i], "-a") == 0) {		// animation flag
+				exportFlags |= FbxExport::ANIMATION;
+			}
+			else if(strcmp(argv[i], "-s") == 0) {		// skeleton flag
+				exportFlags |= FbxExport::SKELETON;
+			}
+			else if(strcmp(argv[i], "-vicon") == 0) {	// vicon flag
+				exportFlags |= FbxExport::VICON;
+			}
+		}
 	}
 	// create fbx manager object
 	FbxManager* sdkManager = FbxManager::Create();
@@ -22,18 +61,19 @@ int main(const int argc, const char** argv)
 
 	// process input
 	for( size_t i = 1; i < (size_t)argc; i++ ) {
-		std::string fileProvided = argv[i];
+		std::string fileProvided = fbx_to_read.str();
 		size_t fileExtIndex = fileProvided.find_last_of('.');
-		if( fileExtIndex <= 0 ) {
+		if( fileExtIndex <= 0 || fileProvided == "") {
 			printf("Provide valid FBX file\n");
-			return 0;
+			exit(-1);
 		}
 		std::string fileExt = fileProvided.substr(fileExtIndex + 1);
 		if( fileExt == "FBX" || fileExt == "fbx") {
 			printf("Parsing %s\n\n", argv[i]);
 		}
 		else {
-			printf("Invalid file format\n");
+			printf("Invalid FBX file\n");
+			exit(-1);
 		}
 
 		// Create importer
@@ -84,7 +124,7 @@ int main(const int argc, const char** argv)
 				FbxString lOutputString = lAnimStack->GetName();
 				printf("Animation Stack Name: %s\n", lOutputString.Buffer());
 
-				processAnimation(rootNode, lAnimStack, asset, fr_rate, 
+				processAnimation(rootNode, lAnimStack, asset, fr_rate,
 								 lOutputString.Buffer());
 				// export DDA (animations)
 				asset.exportAnimation();
