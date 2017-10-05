@@ -173,7 +173,8 @@ void getCurveInfo(
 	FbxNode* node,
 	FbxAnimLayer *animlayer,
 	AnimClipFBX &animclip,
-	const unsigned jnt_idx)
+	const unsigned jnt_idx,
+	bool vicon_fix = false)
 {
 	FbxAnimCurve* lAnimCurve = NULL;
 	dd_array<vec2_f> frame_X, frame_Y, frame_Z;
@@ -210,7 +211,7 @@ void getCurveInfo(
 						animclip.m_clip[frame_num].pose[jnt_idx].rot :
 						animclip.m_clip[frame_num].pose[jnt_idx].pos;
 
-					if (transform == CurveArgs::TRANS) {
+					if (transform == CurveArgs::TRANS && vicon_fix) {
 						switch (idx) {
 							case 1:
 								trans.data[idx + 1] = bin[idx][i].y();
@@ -258,7 +259,7 @@ void processAnimLayer(
 		if( _asset.m_skeleton.m_joints[i].m_name == node_name) {
 			bone_found = true;
 			printf("%s\n", lOutputString.Buffer());
-			getCurveInfo(node, animlayer, clip, i);
+			getCurveInfo(node, animlayer, clip, i, _asset.m_viconFormat);
 		}
 	}
 

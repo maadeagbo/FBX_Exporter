@@ -320,14 +320,23 @@ struct AnimClipFBX
 struct AssetFBX
 {
 	struct EboMesh { dd_array<vec3_u> indices; };
-	AssetFBX() : m_matbin(0), m_verts(0), m_ebos(0), m_clips(0) {}
+	AssetFBX() : 
+		m_matbin(0), 
+		m_verts(0), 
+		m_ebos(0), 
+		m_clips(0), 
+		m_viconFormat(false) 
+	{}
 
 	cbuff<32>			m_id;
+	cbuff<64>			m_fbxName;
+	cbuff<512>			m_fbxPath;
 	dd_array<MatFBX> 	m_matbin;
 	dd_array<VertPNTUV> m_verts;
 	dd_array<EboMesh> 	m_ebos;
 	SkelFbx				m_skeleton;
 	dd_array<AnimClipFBX> m_clips;
+	bool				m_viconFormat;
 
 	void addMesh(MeshFBX& _mesh, dd_array<size_t> &ebo_data);
 	void exportMesh();

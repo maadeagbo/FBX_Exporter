@@ -73,11 +73,22 @@ void AssetFBX::exportSkeleton()
 			 m_skeleton.m_wspos.y(),
 			 m_skeleton.m_wspos.z());
 	outfile << lineBuff;
-	snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
-			 m_skeleton.m_wsrot.x(),
-			 m_skeleton.m_wsrot.y(),
-			 m_skeleton.m_wsrot.z());
-	outfile << lineBuff;
+
+	// change rotation if vicon fix is active
+	if (m_viconFormat) {
+		snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
+				 m_skeleton.m_wsrot.x() - 90.f,
+				 m_skeleton.m_wsrot.y() + 180.f,
+				 m_skeleton.m_wsrot.z());
+		outfile << lineBuff;
+	}
+	else {
+		snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
+				 m_skeleton.m_wsrot.x(),
+				 m_skeleton.m_wsrot.y(),
+				 m_skeleton.m_wsrot.z());
+		outfile << lineBuff;
+	}
 	snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f\n",
 			 m_skeleton.m_wsscl.x(),
 			 m_skeleton.m_wsscl.y(),
