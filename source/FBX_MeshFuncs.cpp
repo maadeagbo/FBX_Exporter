@@ -215,11 +215,11 @@ void getCurveInfo(
 						switch (idx) {
 							case 1:
 								trans.data[idx + 1] = bin[idx][i].y();
-								log[jnt_idx].data[idx] = 1;
+								log[jnt_idx].data[idx + 1] = 1;
 								break;
 							case 2:
 								trans.data[idx - 1] = bin[idx][i].y();
-								log[jnt_idx].data[idx] = 1;
+								log[jnt_idx].data[idx - 1] = 1;
 								break;
 							default:
 								trans.data[idx] = -bin[idx][i].y();
@@ -278,6 +278,64 @@ void processAnimation(FbxNode* node,
 					  const float framerate,
 					  const char* stack_name)
 {
+	/// \brief Fill in missing animations
+	auto fillIn = [&](std::map<unsigned, PoseSample> og_ps, 
+					  const bool rotFlag,
+					  const unsigned jnt_idx)
+	{
+		vec3_f last_saved = vec3_f(0, 0, 0);
+		unsigned last_log = 0;
+		PoseSample* ps = nullptr;
+
+		for (unsigned k = 0; k < og_ps.size(); k++) {
+			if (og_ps.count(k) > 0 && jnt_idx == 0) {
+				// initialize variable for saving position and checking logs
+				ps = &og_ps[k];
+				last_log = k;
+				dd_array<vec3_u>& check = og_ps[k].logged_t;
+				vec3_f& value = ps->pose[jnt_idx].pos;
+				if (rotFlag) { 
+					check = og_ps[k].logged_r;
+					value = ps->pose[jnt_idx].rot;
+				}
+
+				printf("\t%u : ", k);
+				// check if value was key framed. If not, copy last value
+				if (og_ps[k].logged_t[jnt_idx].x() == 1) {	// x axis
+					printf("a(%.3f) ", value.x());
+					last_saved.x() = value.x();
+				}
+				else {
+					printf("F~(%.3f)~", last_saved.x());
+					value.x() = last_saved.x();
+				}
+				if (og_ps[k].logged_t[jnt_idx].y() == 1) {	// y axis
+					printf("b(%.3f) ", value.y());
+					last_saved.y() = value.y();
+				}
+				else {
+					printf("F~(%.3f)~", last_saved.y());
+					value.y() = last_saved.y();
+				}
+				if (og_ps[k].logged_t[jnt_idx].z() == 1) {	// z axis
+					printf("c(%.3f) ", value.z());
+					last_saved.z() = value.z();
+				}
+				else {
+					printf("F~(%.3f)~", last_saved.z());
+					value.z() = last_saved.z();
+				}
+				printf("\n");
+			}
+			// fill in completely missing frames with previous logged frame
+			else if (og_ps.count(k) == 0 && jnt_idx == 0 && ps) {
+				printf("\t%u : skipped and set to %u\n", k, last_log);
+				og_ps[k] = PoseSample();
+				og_ps[k].pose = ps->pose;
+			}
+		}
+	};
+
 	int nbAnimLayers = animstack->GetMemberCount<FbxAnimLayer>();
 	FbxString lOutputString;
 	_asset.m_clips.resize(nbAnimLayers);
@@ -302,19 +360,10 @@ void processAnimation(FbxNode* node,
 		processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
 		
 		for (unsigned j = 0; j < _asset.m_clips[i].m_joints; j++) {
-			vec3_f last_saved = vec3_f(0, 0, 0);
-			printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str() );
-			for(auto& p : _asset.m_clips[i].m_clip) {
-				// rotations
-				for (unsigned k = 0; k < 3; k++) {
-					if (p.second.logged_r[j].data[k] == 1) {
-						last_saved.data[k] = p.second.pose[j].rot.data[k];
-					}
-					else { // pose is in default. Set to last logged pose info
-						//p.second.pose[j].rot.data[k] = last_saved.data[k];
-					}
-				}
-			}
+			printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str());
+			// fix issues with keyed animation
+			fillIn(_asset.m_clips[i].m_clip, false, j);
+			fillIn(_asset.m_clips[i].m_clip, true, j);
 		}
 	}
 }

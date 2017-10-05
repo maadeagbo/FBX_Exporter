@@ -55,10 +55,9 @@ int main(const int argc, const char** argv)
 		"\n\t-a\tanimation"
 		"\n\t-s\tskeleton"
 		"\n\t-v\tvicon\n";
-	cbuff<512> fbx_to_read;
-	cbuff<512> fbx_path;
 	ExportArg exportFlags = ExportArg::NONE;
 
+	std::string fbx_to_read;
 	if( argc < 3 ) {
 		printf("%s", help);
 		return 0;
@@ -69,7 +68,7 @@ int main(const int argc, const char** argv)
 				exportFlags |= checkArgs(argv[i]);
 			}
 			else {									// grab fbx file
-				fbx_to_read.set(argv[i]);
+				fbx_to_read = argv[i];
 			}
 		}
 	}
@@ -81,11 +80,12 @@ int main(const int argc, const char** argv)
 	sdkManager->SetIOSettings(_IOSettings);
 
 	// process input
-	std::string fileProvided = fbx_to_read.str();
+	std::string fbx_path;
 	std::string fbx_name;
+	std::string fileProvided = fbx_to_read.c_str();
 	size_t filePath = fileProvided.find_last_of('/\\');
 	if (filePath != std::string::npos) {
-		fbx_path.set(fileProvided.substr(0, filePath + 1).c_str());
+		fbx_path = fileProvided.substr(0, filePath + 1).c_str();
 	}
 
 	size_t fileExtIndex = fileProvided.find_last_of('.');
@@ -136,6 +136,8 @@ int main(const int argc, const char** argv)
 	if (rootNode) {
 		// create asset
 		AssetFBX asset;
+		asset.m_fbxName.set(fbx_name.c_str());
+		asset.m_fbxPath.set(fbx_path.c_str());
 		if (bool(exportFlags & ExportArg::VICON)) {
 			asset.m_viconFormat = true;
 		}

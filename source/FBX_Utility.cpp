@@ -53,9 +53,10 @@ void AssetFBX::addMesh(MeshFBX & _mesh, dd_array<size_t> &ebo_data)
 /// \brief Export skeleton to format specified by dd_entity_map.txt
 void AssetFBX::exportSkeleton()
 {
-	char lineBuff[256];
+	cbuff<512> buff512;
+	buff512.format("%s%s.ddb", m_fbxPath.str(), m_fbxName.str());
 	std::fstream outfile;
-	outfile.open("skeleton.ddb", std::ofstream::out);
+	outfile.open(buff512.str(), std::ofstream::out);
 
 	// check file is open
 	if (outfile.bad()) {
@@ -64,72 +65,67 @@ void AssetFBX::exportSkeleton()
 	}
 
 	// size
-	snprintf(lineBuff, sizeof(lineBuff), "%u", m_skeleton.m_numJoints);
-	outfile << "<size>\n" << lineBuff << "\n</size>\n";
+	buff512.format("%u\n", m_skeleton.m_numJoints);
+	outfile << "<size>\n" << buff512.str() << "</size>\n";
+
 	// joint to world space
-	outfile << "<global>\n";
-	snprintf(lineBuff, sizeof(lineBuff), "p %.3f %.3f %.3f\n",
-			 m_skeleton.m_wspos.x(),
-			 m_skeleton.m_wspos.y(),
-			 m_skeleton.m_wspos.z());
-	outfile << lineBuff;
+	buff512.format("p %.3f %.3f %.3f\n",
+				   m_skeleton.m_wspos.x(),
+				   m_skeleton.m_wspos.y(),
+				   m_skeleton.m_wspos.z());
+	outfile << "<global>\n" << buff512.str();
 
 	// change rotation if vicon fix is active
 	if (m_viconFormat) {
-		snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
-				 m_skeleton.m_wsrot.x() - 90.f,
-				 m_skeleton.m_wsrot.y() + 180.f,
-				 m_skeleton.m_wsrot.z());
-		outfile << lineBuff;
+		buff512.format("r %.3f %.3f %.3f\n",
+					   m_skeleton.m_wsrot.x() - 90.f,
+					   m_skeleton.m_wsrot.y() + 180.f,
+					   m_skeleton.m_wsrot.z());
+		outfile << buff512.str();
 	}
 	else {
-		snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
-				 m_skeleton.m_wsrot.x(),
-				 m_skeleton.m_wsrot.y(),
-				 m_skeleton.m_wsrot.z());
-		outfile << lineBuff;
+		buff512.format("r %.3f %.3f %.3f\n",
+					   m_skeleton.m_wsrot.x(),
+					   m_skeleton.m_wsrot.y(),
+					   m_skeleton.m_wsrot.z());
+		outfile << buff512.str();
 	}
-	snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f\n",
-			 m_skeleton.m_wsscl.x(),
-			 m_skeleton.m_wsscl.y(),
-			 m_skeleton.m_wsscl.z());
-	outfile << lineBuff;
-	outfile << "</global>\n";
+	buff512.format("s %.3f %.3f %.3f\n",
+				   m_skeleton.m_wsscl.x(),
+				   m_skeleton.m_wsscl.y(),
+				   m_skeleton.m_wsscl.z());
+	outfile << buff512.str() << "</global>\n";
+
 	// joints
 	for (size_t i = 0; i < m_skeleton.m_numJoints; i++) {
-		outfile << "<joint>\n";
 		JointFBX& _j = m_skeleton.m_joints[i];
-		snprintf(lineBuff, sizeof(lineBuff), "%s %u %u\n",
-				 _j.m_name.str(),
-			 	 _j.m_idx,
-			 	 _j.m_parent);
-		outfile << lineBuff;
-		snprintf(lineBuff, sizeof(lineBuff), "p %.3f %.3f %.3f\n",
-				 _j.m_lspos.x(),
-				 _j.m_lspos.y(),
-				 _j.m_lspos.z());
-		outfile << lineBuff;
-		snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f\n",
-				 _j.m_lsrot.x(),
-				 _j.m_lsrot.y(),
-				 _j.m_lsrot.z());
-		outfile << lineBuff;
-		snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f\n",
-				 _j.m_lsscl.x(),
-				 _j.m_lsscl.y(),
-				 _j.m_lsscl.z());
-		outfile << lineBuff;
-		outfile << "</joint>\n";
+		buff512.format("%s %u %u\n", _j.m_name.str(), _j.m_idx, _j.m_parent);
+		outfile << "<joint>\n" << buff512.str();
+		buff512.format("p %.3f %.3f %.3f\n", 
+					   _j.m_lspos.x(),
+					   _j.m_lspos.y(),
+					   _j.m_lspos.z());
+		outfile << buff512.str();
+		buff512.format("r %.3f %.3f %.3f\n",
+					   _j.m_lsrot.x(),
+					   _j.m_lsrot.y(),
+					   _j.m_lsrot.z());
+		outfile << buff512.str();
+		buff512.format("s %.3f %.3f %.3f\n",
+					   _j.m_lsscl.x(),
+					   _j.m_lsscl.y(),
+					   _j.m_lsscl.z());
+		outfile << buff512.str() << "</joint>\n";
 	}
 }
 
 /// \brief Export mesh to format specified by dd_entity_map.txt
 void AssetFBX::exportMesh()
 {
-	char lineBuff[256];
-	snprintf(lineBuff, sizeof(lineBuff), "%s.ddm", m_id.str());
+	cbuff<512> buff512;
+	buff512.format("%s%s.ddm", m_fbxPath.str(), m_id.str());
 	std::fstream outfile;
-	outfile.open(lineBuff, std::ofstream::out);
+	outfile.open(buff512.str(), std::ofstream::out);
 
 	// check file is open
 	if (outfile.bad()) {
@@ -138,123 +134,124 @@ void AssetFBX::exportMesh()
 	}
 
 	// name
-	snprintf(lineBuff, sizeof(lineBuff), "%s", m_id.str());
-	outfile << "<name>\n" << lineBuff << "\n</name>\n";
+	buff512.format("%s\n", m_id.str());
+	outfile << "<name>\n" << buff512.str() << "</name>\n";
+
 	// buffer sizes
-	outfile << "<buffer>\n";
-	snprintf(lineBuff, sizeof(lineBuff), "v %lu", m_verts.size());
-	outfile << lineBuff << "\n";
-	snprintf(lineBuff, sizeof(lineBuff), "e %lu", m_ebos.size());
-	outfile << lineBuff << "\n";
-	snprintf(lineBuff, sizeof(lineBuff), "m %lu", m_matbin.size());
-	outfile << lineBuff << "\n";
-	outfile << "</buffer>\n";
+	buff512.format("v %lu\n", m_verts.size());
+	outfile << "<buffer>\n" << buff512.str();
+	buff512.format("e %lu\n", m_ebos.size());
+	outfile << buff512.str();
+	buff512.format("m %lu\n", m_matbin.size());
+	outfile << buff512.str() << "</buffer>\n";
+
 	// material data
 	for (size_t i = 0; i < m_matbin.size(); i++) {
 		MatFBX& _m = m_matbin[i];
-		outfile << "<material>\n";
-		snprintf(lineBuff, sizeof(lineBuff), "n %s", _m.m_id.str());
-		outfile << lineBuff << "\n";
-		if (static_cast<bool>(_m.m_textypes & MatType::DIFF)) {
-			snprintf(lineBuff, sizeof(lineBuff), "D %s", _m.m_diffmap.str());
-			outfile << lineBuff << "\n";
+		buff512.format("n %s\n", _m.m_id.str());
+		outfile << "<material>\n" << buff512.str();
+		if (bool(_m.m_textypes & MatType::DIFF)) {
+			buff512.format("D %s\n", _m.m_diffmap.str());
+			outfile << buff512.str();
 		}
-		if (static_cast<bool>(_m.m_textypes & MatType::NORMAL)) {
-			snprintf(lineBuff, sizeof(lineBuff), "N %s", _m.m_normmap.str());
-			outfile << lineBuff << "\n";
+		if (bool(_m.m_textypes & MatType::NORMAL)) {
+			buff512.format("N %s\n", _m.m_normmap.str());
+			outfile << buff512.str();
 		}
-		if (static_cast<bool>(_m.m_textypes & MatType::SPEC)) {
-			snprintf(lineBuff, sizeof(lineBuff), "S %s", _m.m_specmap.str());
-			outfile << lineBuff << "\n";
+		if (bool(_m.m_textypes & MatType::SPEC)) {
+			buff512.format("S %s\n", _m.m_specmap.str());
+			outfile << buff512.str();
 		}
-		if (static_cast<bool>(_m.m_textypes & MatType::ROUGH)) {
-			snprintf(lineBuff, sizeof(lineBuff), "R %s", _m.m_roughmap.str());
-			outfile << lineBuff << "\n";
+		if (bool(_m.m_textypes & MatType::ROUGH)) {
+			buff512.format("R %s\n", _m.m_roughmap.str());
+			outfile << buff512.str();
 		}
-		if (static_cast<bool>(_m.m_textypes & MatType::METAL)) {
-			snprintf(lineBuff, sizeof(lineBuff), "M %s", _m.m_metalmap.str());
-			outfile << lineBuff << "\n";
+		if (bool(_m.m_textypes & MatType::METAL)) {
+			buff512.format("M %s\n", _m.m_metalmap.str());
+			outfile << buff512.str();
 		}
-		if (static_cast<bool>(_m.m_textypes & MatType::EMIT)) {
-			snprintf(lineBuff, sizeof(lineBuff), "E %s", _m.m_emitmap.str());
-			outfile << lineBuff << "\n";
+		if (bool(_m.m_textypes & MatType::EMIT)) {
+			buff512.format("E %s\n", _m.m_emitmap.str());
+			outfile << buff512.str();
 		}
-		if (static_cast<bool>(_m.m_textypes & MatType::AO)) {
-			snprintf(lineBuff, sizeof(lineBuff), "A %s", _m.m_aomap.str());
-			outfile << lineBuff << "\n";
+		if (bool(_m.m_textypes & MatType::AO)) {
+			buff512.format("A %s\n", _m.m_aomap.str());
+			outfile << buff512.str();
 		}
 		// vector properties
-		snprintf(lineBuff, sizeof(lineBuff), "a %.3f %.3f %.3f",
-				 _m.m_ambient.x(), _m.m_ambient.y(), _m.m_ambient.z());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "d %.3f %.3f %.3f",
-				 _m.m_diffuse.x(), _m.m_diffuse.y(), _m.m_diffuse.z());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "s %.3f %.3f %.3f",
-				 _m.m_specular.x(), _m.m_specular.y(), _m.m_specular.z());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "e %.3f %.3f %.3f",
-				 _m.m_emmisive.x(), _m.m_emmisive.y(), _m.m_emmisive.z());
-		outfile << lineBuff << "\n";
+		buff512.format("a %.3f %.3f %.3f\n", 
+					   _m.m_ambient.x(), _m.m_ambient.y(), _m.m_ambient.z());
+		outfile << buff512.str();
+		buff512.format("d %.3f %.3f %.3f\n",
+					   _m.m_diffuse.x(), _m.m_diffuse.y(), _m.m_diffuse.z());
+		outfile << buff512.str();
+		buff512.format("s %.3f %.3f %.3f\n",
+					   _m.m_specular.x(), _m.m_specular.y(), _m.m_specular.z());
+		outfile << buff512.str();
+		buff512.format("e %.3f %.3f %.3f\n",
+					   _m.m_emmisive.x(), _m.m_emmisive.y(), _m.m_emmisive.z());
+		outfile << buff512.str();
 
 		// float properties
-		snprintf(lineBuff, sizeof(lineBuff), "x %.3f", _m.m_transfactor);
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "y %.3f", _m.m_reflectfactor);
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "z %.3f", _m.m_specfactor);
-		outfile << lineBuff << "\n";
-
-		outfile << "</material>\n";
+		buff512.format("x %.3f\n", _m.m_transfactor);
+		outfile << buff512.str();
+		buff512.format("y %.3f\n", _m.m_reflectfactor);
+		outfile << buff512.str();
+		buff512.format("z %.3f\n", _m.m_specfactor);
+		outfile << buff512.str() << "</material>\n";
 	}
+
 	// vertex data
 	outfile << "<vertex>\n";
 	for (size_t i = 0; i < m_verts.size(); i++) {
-		snprintf(lineBuff, sizeof(lineBuff), "v %.3f %.3f %.3f",
-				 m_verts[i].m_pos.x(),
-				 m_verts[i].m_pos.y(),
-				 m_verts[i].m_pos.z());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "n %.3f %.3f %.3f",
-				 m_verts[i].m_norm.x(),
-				 m_verts[i].m_norm.y(),
-				 m_verts[i].m_norm.z());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "t %.3f %.3f %.3f",
-				 m_verts[i].m_tang.x(),
-				 m_verts[i].m_tang.y(),
-				 m_verts[i].m_tang.z());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "u %.3f %.3f",
-				 m_verts[i].m_uv.x(),
-				 m_verts[i].m_uv.y());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "j %u %u %u %u",
-				 m_verts[i].m_joint.x(),
-				 m_verts[i].m_joint.y(),
-				 m_verts[i].m_joint.z(),
-				 m_verts[i].m_joint.w());
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "b %.3f %.3f %.3f %.3f",
-				 m_verts[i].m_jblend.x(),
-				 m_verts[i].m_jblend.y(),
-				 m_verts[i].m_jblend.z(),
-				 m_verts[i].m_jblend.w());
-		outfile << lineBuff << "\n";
+		buff512.format("v %.3f %.3f %.3f\n",
+					   m_verts[i].m_pos.x(),
+					   m_verts[i].m_pos.y(),
+					   m_verts[i].m_pos.z());
+		outfile << buff512.str();
+		buff512.format("n %.3f %.3f %.3f\n",
+					   m_verts[i].m_norm.x(),
+					   m_verts[i].m_norm.y(),
+					   m_verts[i].m_norm.z());
+		outfile << buff512.str();
+		buff512.format("t %.3f %.3f %.3f\n",
+					   m_verts[i].m_tang.x(),
+					   m_verts[i].m_tang.y(),
+					   m_verts[i].m_tang.z());
+		outfile << buff512.str();
+		buff512.format("u %.3f %.3f\n",
+					   m_verts[i].m_uv.x(),
+					   m_verts[i].m_uv.y());
+		outfile << buff512.str();
+		buff512.format("j %u %u %u %u\n",
+					   m_verts[i].m_joint.x(),
+					   m_verts[i].m_joint.y(),
+					   m_verts[i].m_joint.z(),
+					   m_verts[i].m_joint.w());
+		outfile << buff512.str();
+		buff512.format("b %.3f %.3f %.3f %.3f\n",
+					   m_verts[i].m_jblend.x(),
+					   m_verts[i].m_jblend.y(),
+					   m_verts[i].m_jblend.z(),
+					   m_verts[i].m_jblend.w());
+		outfile << buff512.str();
 	}
 	outfile << "</vertex>\n";
 
 	// ebo data
 	for (size_t i = 0; i < m_ebos.size(); i++) {
-		outfile << "<ebo>\n";
 		EboMesh& _e = m_ebos[i];
-		snprintf(lineBuff, sizeof(lineBuff), "s %lu", _e.indices.size() * 3);
-		outfile << lineBuff << "\n";
-		outfile << "m " << i << "\n"; // material index
+		buff512.format("s %lu\n", _e.indices.size() * 3); // ebo size
+		outfile << "<ebo>\n" << buff512.str();
+		buff512.format("m %lu\n", i); // material index
+		outfile << buff512.str();
+
 		for (size_t j = 0; j < _e.indices.size(); j++) {
-			snprintf(lineBuff, sizeof(lineBuff), "- %u %u %u",
-					 _e.indices[j].x(), _e.indices[j].y(), _e.indices[j].z());
-			outfile << lineBuff << "\n";
+			buff512.format("- %u %u %u\n",
+						   _e.indices[j].x(),
+						   _e.indices[j].y(),
+						   _e.indices[j].z());
+			outfile << buff512.str();
 		}
 		outfile << "</ebo>\n";
 	}
@@ -266,10 +263,10 @@ void AssetFBX::exportMesh()
 void AssetFBX::exportAnimation()
 {
 	for(unsigned i = 0; i < m_clips.size(); i++) {
-		char lineBuff[256];
-		snprintf(lineBuff, sizeof(lineBuff), "%s.dda", m_clips[i].m_id.str());
+		cbuff<512> buff512;
+		buff512.format("%s%s_%u.dda",  m_fbxPath.str(), m_fbxName.str(), i);
 		std::fstream outfile;
-		outfile.open(lineBuff, std::ofstream::out);
+		outfile.open(buff512.str(), std::ofstream::out);
 	
 		// check file is open
 		if (outfile.bad()) {
@@ -278,38 +275,36 @@ void AssetFBX::exportAnimation()
 		}
 
 		// framerate
-		snprintf(lineBuff, sizeof(lineBuff), "%.3f", m_clips[i].m_framerate);
-		outfile << "<framerate>\n" << lineBuff << "\n</framerate>\n";
+		buff512.format("%.3f\n", m_clips[i].m_framerate);
+		outfile << "<framerate>\n" << buff512.str() << "</framerate>\n";
+
 		// repeat
 		outfile << "<repeat>\n" << 0 << "\n</repeat>\n";
+
 		// buffer sizes
-		outfile << "<buffer>\n";
-		snprintf(lineBuff, sizeof(lineBuff), "j %u", m_clips[i].m_joints);
-		outfile << lineBuff << "\n";
-		snprintf(lineBuff, sizeof(lineBuff), "f %lu", m_clips[i].m_clip.size());
-		outfile << lineBuff << "\n";
-		outfile << "</buffer>\n";	
+		buff512.format("j %u\n", m_clips[i].m_joints);
+		outfile << "<buffer>\n" << buff512.str();
+		buff512.format("f %lu\n", m_clips[i].m_clip.size());
+		outfile << buff512.str() << "</buffer>\n";
 
 		// animation data
 		for(unsigned j = 0; j < m_clips[i].m_joints; j++) {
-			outfile << "<animation>\n";
-			snprintf(lineBuff, sizeof(lineBuff), "- %u", j);
-			outfile << lineBuff << "\n";
+			buff512.format("- %u\n", j);
+			outfile << "<animation>\n" << buff512.str();
 			for(auto& p : m_clips[i].m_clip) {
-				snprintf(lineBuff, sizeof(lineBuff), "r %.3f %.3f %.3f",
-					p.second.pose[j].rot.x(),
-					p.second.pose[j].rot.y(),
-					p.second.pose[j].rot.z());
-				outfile << lineBuff << "\n";
-				snprintf(lineBuff, sizeof(lineBuff), "t %.3f %.3f %.3f",
-					p.second.pose[j].pos.x(),
-					p.second.pose[j].pos.y(),
-					p.second.pose[j].pos.z());
-				outfile << lineBuff << "\n";
+				buff512.format("r %.3f %.3f %.3f\n",
+							   p.second.pose[j].rot.x(),
+							   p.second.pose[j].rot.y(),
+							   p.second.pose[j].rot.z());
+				outfile << buff512.str();
+				buff512.format("t %.3f %.3f %.3f\n",
+							   p.second.pose[j].pos.x(),
+							   p.second.pose[j].pos.y(),
+							   p.second.pose[j].pos.z());
+				outfile << buff512.str();
 			}
 			outfile << "</animation>\n";
 		}
-
 		outfile.close();
 	}
 }
