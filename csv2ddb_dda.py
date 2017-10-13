@@ -7,6 +7,7 @@ The custom file csv format is the following:
 """
 
 from math import degrees, atan2, asin
+import os
 
 """Float values per bone: x, y, z, quaternion(w, x, y, z)"""
 DATA_PER_NAME = 7
@@ -59,16 +60,16 @@ def quat2euler(quaternion):
 
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y2)
-    X = degrees(atan2(t0, t1))
+    X = atan2(t0, t1)
 
     t2 = +2.0 * ( w * y - z * x)
     t2 = 1 if t2 > 1 else t2
     t2 = -1 if t2 < -1 else t2
-    Y = degrees(asin(t2))
+    Y = asin(t2)
 
     t3 = +2.0 * (w * z + x * y)
     t4 = +1.0 - 2.0 * (y2 + z * z)
-    Z = degrees(atan2(t3, t4))
+    Z = atan2(t3, t4)
 
     return [X, Y, Z]
 
@@ -108,7 +109,9 @@ hierarchy_map = [
 def export_dda(data, name):
     """converts internal time, name, position, and rotation data into dda"""
     (frame_times, names, poss, rots) = data
-    framerate = 1/frame_times[1]
+    framerate = 1
+    if len(frame_times) > 1:
+        framerate = 1/frame_times[1]
     repeat = False
     #buffer
     num_joints = len(names)
@@ -123,6 +126,7 @@ def export_dda(data, name):
         anims += [motion]
 
     #write to dda format
+    print(name)
     with open(name, 'w') as f:
         f.write("<format>\n")
         f.write("global\n")
@@ -172,10 +176,19 @@ def export_ddb(data, name):
 
 #if called from CLI, read in file name, parse into data, export to specific format
 if __name__ == '__main__':
-    name = in_csv_name()
-    data = read_csv(name)
-    if 'b' in input("dd(a)/dd(b)? "):
-        export_ddb(data, name[:-4]+".ddb")
-    else:
-        export_dda(data, name[:-4]+".dda")
+    #name = in_csv_name()
+    in_dir_name = input("please enter dir of m.csv to convert to dda:")
+    out_dir_name = input("please enter dir to ouptut dda files:")
+    for f in os.listdir(in_dir_name):
+        if f[-4:] == ".csv":
+            data = read_csv(in_dir_name+"/"+f)
+            print(out_dir_name+"/"+f[:-4]+".dda")
+            export_dda(data, out_dir_name+"/"+f[:-4]+".dda")
+            #export_ddb(data, out_dir_name+f[-4:]+".ddb")
+        else:
+            continue
+    #if 'b' in input("dd(a)/dd(b)? "):
+    #    export_ddb(data, name[:-4]+".ddb")
+    #else:
+    #    export_dda(data, name[:-4]+".dda")
 
