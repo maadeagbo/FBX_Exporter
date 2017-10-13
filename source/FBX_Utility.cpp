@@ -297,7 +297,7 @@ void AssetFBX::exportAnimation()
 							   p.second.pose[j].rot.y(),
 							   p.second.pose[j].rot.z());
 				outfile << buff512.str();
-				buff512.format("t %.3f %.3f %.3f\n",
+				buff512.format("p %.3f %.3f %.3f\n",
 							   p.second.pose[j].pos.x(),
 							   p.second.pose[j].pos.y(),
 							   p.second.pose[j].pos.z());
