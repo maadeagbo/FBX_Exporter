@@ -6,7 +6,7 @@ The custom file csv format is the following:
    ...
 """
 
-from math import degrees, atan2, asin
+from math import degrees, atan2, asin, sqrt
 import os
 
 """Float values per bone: x, y, z, quaternion(w, x, y, z)"""
@@ -52,27 +52,6 @@ def read_csv(csv_file):
             rots += [rot]
     return (times, bone_names, poss, rots)
 
-def quat2euler(quaternion):
-    """Converts quaternion rotation into a 3D euler angle (degrees...)"""
-    #https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Quaternion_to_Euler_Angles_Conversion
-    (w, x, y, z) = quaternion
-    y2 = y * y
-
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + y2)
-    X = atan2(t0, t1)
-
-    t2 = +2.0 * ( w * y - z * x)
-    t2 = 1 if t2 > 1 else t2
-    t2 = -1 if t2 < -1 else t2
-    Y = asin(t2)
-
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (y2 + z * z)
-    Z = atan2(t3, t4)
-
-    return [X, Y, Z]
-
 """Each index specifies that bone index's parent index. e.g. head (index 12)
 has spine (index 11) as a parent."""
 hierarchy_map = [
@@ -106,7 +85,107 @@ hierarchy_map = [
     26,#righthandthumb2 -> righthandthumb1
 ]
 
-def export_dda(data, name):
+def transpose(mat):
+   """returns the 2D transposed matrix of mat"""
+   mat_T = [[0 for i in range(len(mat))] for j in range(len(mat[0]))]
+   for i in range(len(mat)):
+       for j in range(len(mat[0])):
+           mat_T[j][i] = mat[i][j]
+   return mat_T 
+
+def mm_mult(A, B):
+    """returns the matrix multiplication of A and B"""
+    C = [[0 for i in range(len(B[0]))] for j in range(len(A))]
+    for i in range(len(A)):
+        for j in range(len(B[0])):
+           C[i][j] = sum([A[i][k]*B[k][j] for k in range(len(B))]) 
+    return C
+
+def quat2euler(quaternion):
+    """Converts quaternion rotation into a 3D euler angle (degrees...)"""
+    #https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Quaternion_to_Euler_Angles_Conversion
+    (w, x, y, z) = quaternion
+    y2 = y * y
+
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y2)
+    X = atan2(t0, t1)
+
+    t2 = +2.0 * ( w * y - z * x)
+    t2 = 1 if t2 > 1 else t2
+    t2 = -1 if t2 < -1 else t2
+    Y = asin(t2)
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y2 + z * z)
+    Z = atan2(t3, t4)
+
+    return [X, Y, Z]
+
+def quat2mat(q):
+    """returns the equivalent rotation matrix for a 4D quaternion"""
+    #http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/
+    x = q[1]
+    y = q[2]
+    z = q[3]
+    w = q[0]
+    mat = [[0 for i in range(4)] for j in range(4)]
+    mat[0][0] = 1 - 2*y*y - 2*z*z
+    mat[0][1] = 2*x*y - 2*z*w
+    mat[0][2] = 2*x*z + 2*y*w
+    mat[1][0] = 2*x*y + 2*z*w
+    mat[1][1] = 1 - 2*x*x - 2*z*z
+    mat[1][2] = 2*y*z - 2*x*w
+    mat[2][0] = 2*x*z - 2*y*w
+    mat[2][1] = 2*y*z + 2*x*w
+    mat[2][2] = 1 - 2*x*x - 2*y*y
+
+    for i in range(3):
+        mat[3][i] = 0
+        mat[i][3] = 0
+    mat[3][3] = 1
+
+    return mat
+
+def mat2quat(m):
+    """returns the equivalent quaternion for a rotation matrix"""
+    #http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+    trace = m[0][0] + m[1][1] + m[2][2]
+
+    q = [0 for v in range(4)]
+
+    if trace > 0:
+        S = sqrt(trace + 1.0) * 2
+        #w
+        q[0] = S / 4
+        #x
+        q[1] = (m[2][1] - m[1][2]) / S
+        #y
+        q[2] = (m[0][2] - m[2][0]) / S
+        #z
+        q[3] = (m[1][0] - m[0][1]) / S
+    elif m[0][0] > m[1][1] and m[1][1] > m[2][2]:
+        S = sqrt(1 + m[0][0] - m[1][1] - m[2][2]) * 2
+        q[0] = (m[2][1] - m[1][2]) / S
+        q[1] = S / 4
+        q[2] = (m[0][1] + m[1][0]) / S
+        q[3] = (m[0][2] + m[2][0]) / S
+    elif m[1][1] > m[2][2]:
+        S = sqrt(1 + m[1][1] - m[0][0] - m[2][2]) * 2
+        q[0] = (m[0][2] - m[2][0]) / S
+        q[1] = (m[0][1] + m[1][0]) / S
+        q[2] = S / 4
+        q[3] = (m[1][2] + m[2][1]) / S
+    else:
+        S = sqrt(1 + m[2][2] - m[0][0] - m[1][1]) * 2
+        q[0] = (m[1][0] - m[0][1]) / S
+        q[1] = (m[0][2] + m[2][0]) / S
+        q[2] = (m[1][2] + m[2][1]) / S
+        q[3] = S / 4
+
+    return q
+
+def export_dda(data, name, form):
     """converts internal time, name, position, and rotation data into dda"""
     (frame_times, names, poss, rots) = data
     framerate = 1
@@ -117,19 +196,62 @@ def export_dda(data, name):
     num_joints = len(names)
     num_frames = len(frame_times)
 
-    #animation
+    #relativize the animation
+    if 'g' not in form:
+        hierarchy_pose = [None for v in range(28)]
+        for t in range(len(frame_times)):
+            for child in range(len(names)):
+                parent = hierarchy_map[child]
+
+                #child rotation matrix
+                child_rot = quat2mat(rots[t][child])
+                #child translation matrix
+                child_trans_v = poss[t][child]
+                child_trans = [[i == j for i in range(4)] for j in range(4)]
+                for i in range(3):
+                    child_trans[i][3] = child_trans_v[i];
+                #child pose
+                child_pose = mm_mult(child_trans, child_rot)
+
+                #get inverse child transformation for future transforms
+                neg_child_trans = child_trans
+                for i in range(3):
+                    neg_child_trans[i][3] = -child_trans_v[i]
+                c_inv = mm_mult(transpose(child_rot), neg_child_trans)
+
+                #get inverse transformation of parents'
+                p_inv = None
+                if child == 0:#hip == root
+                    p_inv = c_inv
+                else:
+                    p_inv = hierarchy_pose[parent]
+                hierarchy_pose[child] = mm_mult(c_inv, p_inv)
+
+                #transform from parent to child
+                relative = mm_mult(child_pose, p_inv)
+
+                #calculate relative
+                for i in range(3):
+                    poss[t][child][i] = relative[i][3]
+                    relative[i][3] = 0
+                rots[t][child] = quat2euler(mat2quat(relative))
+
+    #restructure so that we iterate over time first, then names.
     anims = []
     for n in range(len(names)):
         motion = []
         for t in range(len(frame_times)):
-            motion += [(quat2euler(rots[t][n]), poss[t][n])]
+            motion += [(rots[t][n], poss[t][n])]
         anims += [motion]
 
     #write to dda format
     print(name)
     with open(name, 'w') as f:
         f.write("<format>\n")
-        f.write("global\n")
+        if 'g' in form:
+            f.write("global\n")
+        else:
+            f.write("relative\n")
         f.write("</format>\n")
         f.write("<framerate>\n")
         f.write(str(framerate) + "\n")
@@ -176,19 +298,23 @@ def export_ddb(data, name):
 
 #if called from CLI, read in file name, parse into data, export to specific format
 if __name__ == '__main__':
-    #name = in_csv_name()
-    in_dir_name = input("please enter dir of m.csv to convert to dda:")
-    out_dir_name = input("please enter dir to ouptut dda files:")
-    for f in os.listdir(in_dir_name):
-        if f[-4:] == ".csv":
-            data = read_csv(in_dir_name+"/"+f)
-            print(out_dir_name+"/"+f[:-4]+".dda")
-            export_dda(data, out_dir_name+"/"+f[:-4]+".dda")
-            #export_ddb(data, out_dir_name+f[-4:]+".ddb")
+    mode = input("please enter whether a (d)ir or (f)ile is being converted: ")
+    form = input("please enter whether you want (g)lobal dda or (r)elative dda: ")
+    if 'd' in mode:
+        in_dir_name = input("please enter dir of m.csv to convert to dda:")
+        out_dir_name = input("please enter dir to ouptut dda files:")
+        for f in os.listdir(in_dir_name):
+            if f[-4:] == ".csv":
+                data = read_csv(in_dir_name+"/"+f)
+                print(out_dir_name+"/"+f[:-4]+".dda")
+                export_dda(data, out_dir_name+"/"+f[:-4]+".dda", form)
+                #export_ddb(data, out_dir_name+f[-4:]+".ddb")
+            else:
+                continue
+    else:
+        name = in_csv_name()
+        data = read_csv(name)
+        if 'b' in input("dd(a)/dd(b)? "):
+            export_ddb(data, name[:-4]+".ddb")
         else:
-            continue
-    #if 'b' in input("dd(a)/dd(b)? "):
-    #    export_ddb(data, name[:-4]+".ddb")
-    #else:
-    #    export_dda(data, name[:-4]+".dda")
-
+            export_dda(data, name[:-4]+".dda", form)
