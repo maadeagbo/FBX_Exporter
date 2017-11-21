@@ -6,6 +6,7 @@
 #include <functional>
 #include <fbxsdk.h>
 #include <DD_Container.h>
+#include <DD_String.h>
 
 #define MAX_JOINTS ((uint8_t)-1)
 
@@ -115,54 +116,6 @@ operator &(Enum lhs, Enum rhs)
 		static_cast<underlying>(rhs)
 		);
 }
-
-static size_t getCharHash(const char* s)
-{
-	size_t h = 5381;
-	int c;
-	while( (c = *s++) )
-		h = ((h << 5) + h) + c;
-	return h;
-}
-
-template <const int T>
-struct cbuff
-{
-	cbuff() { set(""); }
-	cbuff(const char* in_str) { set(in_str); }
-	int compare(const char* in_str)
-	{
-		return strcmp(cstr, in_str);
-	}
-	bool operator==(const cbuff &other) const
-	{
-		return hash == other.hash;
-	}
-
-	bool operator<(const cbuff &other) const
-	{
-		return hash < other.hash;
-	}
-
-	void set(const char* in_str)
-	{
-		snprintf(cstr, T, "%s", in_str);
-		hash = getCharHash(cstr);
-	}
-
-	template<typename... Args>
-	void format(const char* format_str, const Args&... args)
-	{
-		snprintf(cstr, T, format_str, args...);
-		hash = getCharHash(cstr);
-	}
-
-	const char* str() const { return cstr; }
-	size_t gethash() const { return hash; }
-private:
-	char cstr[T];
-	size_t hash;
-};
 
 /// Triangle information (uses typedef arrays for least amount of padding)
 struct VertPNTUV
@@ -337,6 +290,7 @@ struct AssetFBX
 	SkelFbx				m_skeleton;
 	dd_array<AnimClipFBX> m_clips;
 	bool				m_viconFormat;
+	float				scale_factor;
 
 	void addMesh(MeshFBX& _mesh, dd_array<size_t> &ebo_data);
 	void exportMesh();

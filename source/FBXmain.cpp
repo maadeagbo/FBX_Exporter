@@ -13,7 +13,8 @@ enum class ExportArg
 	MESH = 0x1,
 	ANIMATION = 0x2,
 	SKELETON = 0x4,
-	VICON = 0x8
+	VICON = 0x8,
+	SCALE = 0x10
 };
 template<>
 struct EnableBitMaskOperators<ExportArg> { static const bool enable = true; };
@@ -48,14 +49,18 @@ ExportArg checkArgs(const char* arg)
 	return bitflag;
 }
 
+FbxNode* FindAtribute(FbxNode *_node, const FbxNodeAttribute::EType type);
+
 int main(const int argc, const char** argv)
 {
 	const char* help = "\nProvide fbx file and arguments for export: "
 		"\n\t-m\tmesh"
 		"\n\t-a\tanimation"
 		"\n\t-s\tskeleton"
+		"\n\t~<float>\tadjust export scale"
 		"\n\t-v\tvicon\n";
 	ExportArg exportFlags = ExportArg::NONE;
+	float scale_factor = 1.f;
 
 	std::string fbx_to_read;
 	if( argc < 3 ) {
@@ -66,6 +71,14 @@ int main(const int argc, const char** argv)
 		for (unsigned i = 1; i < argc; i++) {
 			if (*argv[i] == '-') {					// parse args		
 				exportFlags |= checkArgs(argv[i]);
+			}
+			else if (*argv[i] == '~') {				// scale skeleton and animations		
+				dd_array<cbuff<8>> sc = StrSpace::tokenize512<8>(argv[i], "~");
+				for (size_t j = 0; j < sc.size(); j++) {
+					if (*sc[j].str() && *sc[j].str() != ' ') {
+						scale_factor = strtof(sc[j].str(), nullptr);
+					}
+				}
 			}
 			else {									// grab fbx file
 				fbx_to_read = argv[i];
@@ -136,21 +149,16 @@ int main(const int argc, const char** argv)
 	if (rootNode) {
 		// create asset
 		AssetFBX asset;
+		asset.scale_factor = scale_factor;
 		asset.m_fbxName.set(fbx_name.c_str());
 		asset.m_fbxPath.set(fbx_path.c_str());
 		if (bool(exportFlags & ExportArg::VICON)) {
 			asset.m_viconFormat = true;
 		}
 		printf("\n\n---------\nSkeleton\n---------\n\n");
-		for (int i = 0; i < rootNode->GetChildCount(); i++) {
-			FbxNode *_node = rootNode->GetChild(i);
-			FbxNodeAttribute* attrib = _node->GetNodeAttribute();
-			if (attrib) {
-				FbxNodeAttribute::EType type = attrib->GetAttributeType();
-				if (type == fbxsdk::FbxNodeAttribute::eSkeleton) {
-					processSkeletonAsset(_node, 0, asset);
-				}
-			}
+		FbxNode *_node = FindAtribute(rootNode, fbxsdk::FbxNodeAttribute::eSkeleton);
+		if (_node) {
+			processSkeletonAsset(_node, 0, asset);
 		}
 		printf("\n\n---------\nAnimation\n---------\n\n");
 		for (int i = 0; i < fbx_scene->GetSrcObjectCount<FbxAnimStack>(); i++) {
@@ -172,15 +180,10 @@ int main(const int argc, const char** argv)
 			if (attrib) {
 				FbxNodeAttribute::EType type = attrib->GetAttributeType();
 				if (type == fbxsdk::FbxNodeAttribute::eMesh) {
-					processAsset(_node, asset);
-					// export DDM (mesh)
-					if (bool(exportFlags & ExportArg::MESH)) {
-						asset.exportMesh();
-					}
-					// export DDB (skeleton)
-					if (bool(exportFlags & ExportArg::SKELETON)) {
-						asset.exportSkeleton();
-					}
+					processAsset(_node, 
+								 asset, 
+								 bool(exportFlags & ExportArg::SKELETON),
+								 bool(exportFlags & ExportArg::MESH));
 				}
 			}
 		}
@@ -190,4 +193,21 @@ int main(const int argc, const char** argv)
 	sdkManager->Destroy();
 
 	return 0;
+}
+
+FbxNode *FindAtribute(FbxNode * _node, const FbxNodeAttribute::EType type)
+{
+	for (int i = 0; i < _node->GetChildCount(); i++) {
+		FbxNode *new_node = _node->GetChild(i);
+		FbxNodeAttribute* attrib = new_node->GetNodeAttribute();
+		if (attrib) {
+			FbxNodeAttribute::EType new_type = attrib->GetAttributeType();
+			if (new_type == fbxsdk::FbxNodeAttribute::eSkeleton) {
+				return new_node;
+			}
+		}
+		new_node = FindAtribute(new_node, type);
+		if (new_node) { return new_node; }
+	}
+	return nullptr;
 }

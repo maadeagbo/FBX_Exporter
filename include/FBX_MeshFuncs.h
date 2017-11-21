@@ -3,7 +3,10 @@
 #include <typeinfo>
 #include <string>
 
-void processAsset(FbxNode* node, AssetFBX &_asset);
+void processAsset(FbxNode* node, 
+				  AssetFBX &_asset, 
+				  bool export_skeleton,
+				  bool export_mesh);
 void processSkeletonAsset(FbxNode *node, const size_t index, AssetFBX &_asset);
 void processAnimation(FbxNode *node,
 					  FbxAnimStack *animstack,

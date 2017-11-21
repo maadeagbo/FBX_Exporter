@@ -102,9 +102,9 @@ void AssetFBX::exportSkeleton()
 		buff512.format("%s %u %u\n", _j.m_name.str(), _j.m_idx, _j.m_parent);
 		outfile << "<joint>\n" << buff512.str();
 		buff512.format("p %.3f %.3f %.3f\n", 
-					   _j.m_lspos.x(),
-					   _j.m_lspos.y(),
-					   _j.m_lspos.z());
+					   _j.m_lspos.x() * scale_factor,
+					   _j.m_lspos.y() * scale_factor,
+					   _j.m_lspos.z() * scale_factor);
 		outfile << buff512.str();
 		buff512.format("r %.3f %.3f %.3f\n",
 					   _j.m_lsrot.x(),
@@ -205,9 +205,9 @@ void AssetFBX::exportMesh()
 	outfile << "<vertex>\n";
 	for (size_t i = 0; i < m_verts.size(); i++) {
 		buff512.format("v %.3f %.3f %.3f\n",
-					   m_verts[i].m_pos.x(),
-					   m_verts[i].m_pos.y(),
-					   m_verts[i].m_pos.z());
+					   m_verts[i].m_pos.x() * scale_factor,
+					   m_verts[i].m_pos.y() * scale_factor,
+					   m_verts[i].m_pos.z() * scale_factor);
 		outfile << buff512.str();
 		buff512.format("n %.3f %.3f %.3f\n",
 					   m_verts[i].m_norm.x(),
@@ -298,9 +298,9 @@ void AssetFBX::exportAnimation()
 							   p.second.pose[j].rot.z());
 				outfile << buff512.str();
 				buff512.format("p %.3f %.3f %.3f\n",
-							   p.second.pose[j].pos.x(),
-							   p.second.pose[j].pos.y(),
-							   p.second.pose[j].pos.z());
+							   p.second.pose[j].pos.x() * scale_factor,
+							   p.second.pose[j].pos.y() * scale_factor,
+							   p.second.pose[j].pos.z() * scale_factor);
 				outfile << buff512.str();
 			}
 			outfile << "</animation>\n";

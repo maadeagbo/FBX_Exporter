@@ -55,5 +55,6 @@ DDA extension: (Animation clip)
     animation:  per joint animation information
         -:      (uint) index                x
         r:      (float) rotation            x, y, z
+        p:      (float) position            x, y, z
 
 End file may be compressed w/ gz extension to save on size

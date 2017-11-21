@@ -15,7 +15,10 @@ dd_array<vec2_f> DisplayCurve(FbxAnimCurve* pCurve);
 
 /// \brief Process asset and export file w/ mesh and animation data
 /// \param node FbxNode with mesh and anim information
-void processAsset(FbxNode* node, AssetFBX &_asset)
+void processAsset(FbxNode* node, 
+				  AssetFBX &_asset,
+				  bool export_skeleton,
+				  bool export_mesh)
 {
 	const char* nodeName = node->GetName();
 
@@ -50,6 +53,8 @@ void processAsset(FbxNode* node, AssetFBX &_asset)
 
 	printf("Mesh name ='%s'(%lu)\n",
 		   mesh.m_id.str(), mesh.m_id.gethash());
+	if (export_mesh) { _asset.exportMesh(); }
+	if (export_skeleton) { _asset.exportSkeleton(); }
 }
 
 /// \brief Process node to get skeleton heirarchy
@@ -299,37 +304,37 @@ void processAnimation(FbxNode* node,
 					value = ps->pose[jnt_idx].rot;
 				}
 
-				printf("\t%u : ", k);
+				//printf("\t%u : ", k);
 				// check if value was key framed. If not, copy last value
 				if (og_ps[k].logged_t[jnt_idx].x() == 1) {	// x axis
-					printf("a(%.3f) ", value.x());
+					//printf("a(%.3f) ", value.x());
 					last_saved.x() = value.x();
 				}
 				else {
-					printf("F~(%.3f)~", last_saved.x());
+					//printf("F~(%.3f)~", last_saved.x());
 					value.x() = last_saved.x();
 				}
 				if (og_ps[k].logged_t[jnt_idx].y() == 1) {	// y axis
-					printf("b(%.3f) ", value.y());
+					//printf("b(%.3f) ", value.y());
 					last_saved.y() = value.y();
 				}
 				else {
-					printf("F~(%.3f)~", last_saved.y());
+					//printf("F~(%.3f)~", last_saved.y());
 					value.y() = last_saved.y();
 				}
 				if (og_ps[k].logged_t[jnt_idx].z() == 1) {	// z axis
-					printf("c(%.3f) ", value.z());
+					//printf("c(%.3f) ", value.z());
 					last_saved.z() = value.z();
 				}
 				else {
-					printf("F~(%.3f)~", last_saved.z());
+					//printf("F~(%.3f)~", last_saved.z());
 					value.z() = last_saved.z();
 				}
-				printf("\n");
+				//printf("\n");
 			}
 			// fill in completely missing frames with previous logged frame
 			else if (og_ps.count(k) == 0 && jnt_idx == 0 && ps) {
-				printf("\t%u : skipped and set to %u\n", k, last_log);
+				//printf("\t%u : skipped and set to %u\n", k, last_log);
 				og_ps[k] = PoseSample();
 				og_ps[k].pose = ps->pose;
 			}
@@ -360,7 +365,7 @@ void processAnimation(FbxNode* node,
 		processAnimLayer(node, lAnimLayer, _asset, _asset.m_clips[i]);
 		
 		for (unsigned j = 0; j < _asset.m_clips[i].m_joints; j++) {
-			printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str());
+			//printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str());
 			// fix issues with keyed animation
 			fillIn(_asset.m_clips[i].m_clip, false, j);
 			fillIn(_asset.m_clips[i].m_clip, true, j);
@@ -676,7 +681,7 @@ dd_array<MatFBX> processMats(FbxNode * node)
 
 			// specular
 			lProperty = surface_mat->FindProperty(
-				FbxSurfaceMaterial::sShininess);
+				FbxSurfaceMaterial::sSpecular);
 			getTexChannels(lProperty, i, MatType::SPEC);
 
 			// Transparency factor
