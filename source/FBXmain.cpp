@@ -49,7 +49,9 @@ ExportArg checkArgs(const char* arg)
 	return bitflag;
 }
 
-FbxNode* FindAtribute(FbxNode *_node, const FbxNodeAttribute::EType type);
+FbxNode* FindAttribute(FbxNode *_node, const FbxNodeAttribute::EType type);
+
+FbxNode* FindAttributeParent(FbxNode *_node, const FbxNodeAttribute::EType type);
 
 int main(const int argc, const char** argv)
 {
@@ -68,7 +70,7 @@ int main(const int argc, const char** argv)
 		return 0;
 	}
 	else {
-		for (unsigned i = 1; i < argc; i++) {
+		for (int i = 1; i < argc; i++) {
 			if (*argv[i] == '-') {					// parse args		
 				exportFlags |= checkArgs(argv[i]);
 			}
@@ -96,7 +98,7 @@ int main(const int argc, const char** argv)
 	std::string fbx_path;
 	std::string fbx_name;
 	std::string fileProvided = fbx_to_read.c_str();
-	size_t filePath = fileProvided.find_last_of('/\\');
+	size_t filePath = fileProvided.find_last_of("/\\");
 	if (filePath != std::string::npos) {
 		fbx_path = fileProvided.substr(0, filePath + 1).c_str();
 	}
@@ -156,7 +158,7 @@ int main(const int argc, const char** argv)
 			asset.m_viconFormat = true;
 		}
 		printf("\n\n---------\nSkeleton\n---------\n\n");
-		FbxNode *_node = FindAtribute(rootNode, fbxsdk::FbxNodeAttribute::eSkeleton);
+		FbxNode *_node = FindAttribute(rootNode, fbxsdk::FbxNodeAttribute::eSkeleton);
 		if (_node) {
 			processSkeletonAsset(_node, 0, asset);
 		}
@@ -174,19 +176,24 @@ int main(const int argc, const char** argv)
 			}
 		}
 		printf("\n\n----\nMesh\n----\n\n");
-		for (int i = 0; i < rootNode->GetChildCount(); i++) {
-			FbxNode *_node = rootNode->GetChild(i);
-			FbxNodeAttribute* attrib = _node->GetNodeAttribute();
-			if (attrib) {
-				FbxNodeAttribute::EType type = attrib->GetAttributeType();
-				if (type == fbxsdk::FbxNodeAttribute::eMesh) {
-					processAsset(_node, 
-								 asset, 
-								 bool(exportFlags & ExportArg::SKELETON),
-								 bool(exportFlags & ExportArg::MESH));
+		FbxNode *mesh_parent_node = 
+			FindAttributeParent(rootNode, fbxsdk::FbxNodeAttribute::eMesh);
+		if (mesh_parent_node) {
+			for (int i = 0; i < mesh_parent_node->GetChildCount(); i++) {
+				FbxNode *_node = mesh_parent_node->GetChild(i);
+				FbxNodeAttribute* attrib = _node->GetNodeAttribute();
+				if (attrib) {
+					FbxNodeAttribute::EType type = attrib->GetAttributeType();
+					if (type == fbxsdk::FbxNodeAttribute::eMesh) {
+						processAsset(_node, 
+									asset, 
+									bool(exportFlags & ExportArg::SKELETON),
+									bool(exportFlags & ExportArg::MESH));
+					}
 				}
 			}
 		}
+		// end of parsing
 	}
 
 	// destroy sdkManager when done
@@ -195,18 +202,35 @@ int main(const int argc, const char** argv)
 	return 0;
 }
 
-FbxNode *FindAtribute(FbxNode * _node, const FbxNodeAttribute::EType type)
+FbxNode *FindAttribute(FbxNode * _node, const FbxNodeAttribute::EType type)
 {
 	for (int i = 0; i < _node->GetChildCount(); i++) {
 		FbxNode *new_node = _node->GetChild(i);
 		FbxNodeAttribute* attrib = new_node->GetNodeAttribute();
 		if (attrib) {
 			FbxNodeAttribute::EType new_type = attrib->GetAttributeType();
-			if (new_type == fbxsdk::FbxNodeAttribute::eSkeleton) {
-				return new_node;
+			if (new_type == type) {
+				return new_node; // return current node
 			}
 		}
-		new_node = FindAtribute(new_node, type);
+		new_node = FindAttribute(new_node, type);
+		if (new_node) { return new_node; }
+	}
+	return nullptr;
+}
+
+FbxNode* FindAttributeParent(FbxNode *_node, const FbxNodeAttribute::EType type)
+{
+	for (int i = 0; i < _node->GetChildCount(); i++) {
+		FbxNode *new_node = _node->GetChild(i);
+		FbxNodeAttribute* attrib = new_node->GetNodeAttribute();
+		if (attrib) {
+			FbxNodeAttribute::EType new_type = attrib->GetAttributeType();
+			if (new_type == type) {
+				return _node; // return parent and not current node
+			}
+		}
+		new_node = FindAttributeParent(new_node, type);
 		if (new_node) { return new_node; }
 	}
 	return nullptr;
