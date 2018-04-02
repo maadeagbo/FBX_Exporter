@@ -123,9 +123,13 @@ void AssetFBX::exportSkeleton()
 void AssetFBX::exportMesh()
 {
 	cbuff<512> buff512;
-	buff512.format("%s%s.ddm", m_fbxPath.str(), m_id.str());
+	// remove/replace restricted filename symbols
+	std::string id = m_id.str();
+	std::replace(id.begin(), id.end(), ':', '_');
+
+	buff512.format("%s%s.ddm", m_fbxPath.str(), id.c_str());
 	std::fstream outfile;
-	outfile.open(buff512.str(), std::ofstream::out);
+	outfile.open(buff512.str(), std::ios::out);
 
 	// check file is open
 	if (outfile.bad()) {
@@ -256,7 +260,8 @@ void AssetFBX::exportMesh()
 		outfile << "</ebo>\n";
 	}
 
-	outfile.close();
+	outfile.flush();
+	//outfile.close();
 }
 
 /// \brief Export animation to format specified by dd_entity_map.txt
