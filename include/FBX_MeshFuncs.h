@@ -44,7 +44,7 @@ void getVertInfo(T info_type,
 					if( typeid(T) == typeid(FbxGeometryElementUV*) ) {
 						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[0]);
-						vec.y() = 1 - static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(ctrlpnt_idx).mData[1]);
 						vec.z() = 0.f;
 					}
@@ -63,7 +63,7 @@ void getVertInfo(T info_type,
 					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
 						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[0]);
-						vec.y() = 1 - static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(index).mData[1]);
 						vec.z() = 0.f;
 					}
@@ -88,7 +88,7 @@ void getVertInfo(T info_type,
 					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
 						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
-						vec.y() = 1 - static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[1]);
 						vec.z() = 0.f;
 					}
@@ -107,7 +107,7 @@ void getVertInfo(T info_type,
 					if(typeid(T) == typeid(FbxGeometryElementUV*)) {
 						vec.x() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[0]);
-						vec.y() = 1 - static_cast<float>(
+						vec.y() = static_cast<float>(
 							info_type->GetDirectArray().GetAt(polyvert_idx).mData[1]);
 						vec.z() = 0.f;
 					}

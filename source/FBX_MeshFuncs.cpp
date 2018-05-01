@@ -1,5 +1,6 @@
 #include "FBX_MeshFuncs.h"
 #include <vector>
+#include <cmath>
 
 enum class CurveArgs { TRANS, ROT, SCALE, X_, Y_, Z_ };
 
@@ -156,6 +157,51 @@ dd_array<vec2_f> getKeyFrames(FbxAnimCurve* animCurve,
   return output;
 }
 
+dd_array<vec2_f> getKeyFrames2(FbxAnimCurve* animCurve, const unsigned fps) {
+	// get total time of animation and use to set limits
+	FbxTimeSpan curve_span;
+	const bool success = animCurve->GetTimeInterval(curve_span);
+	
+	//POW2_VERIFY_MSG(success == true, "Failed to get length of curve: %s", 
+	//								animCurve->GetName());
+
+	const double curve_length = curve_span.GetDuration().GetSecondDouble();
+	unsigned num_frames = (unsigned)(curve_length / (1.0/fps));
+
+	// check if there's a remainder frame
+	/*bool extra_frame = false;
+	if (animCurve->KeyGetCount() > (int)num_frames) {
+		extra_frame = true;
+		num_frames += 1;
+	}*/
+
+	dd_array<vec2_f> output(num_frames);
+	float key_val = 0.f;
+	FbxTime key_time(FBXSDK_TC_ZERO);
+	const FbxLongLong fbx_frametime = FBXSDK_TC_SECOND / fps;
+	int last_frame = 0;
+
+	//const unsigned f_limit = (extra_frame) ? num_frames - 1 : num_frames;
+	for (unsigned i = 0; i < num_frames; i++) {
+		// get value and frame number
+		key_val = animCurve->Evaluate(key_time, &last_frame);
+
+		output[i].data[0] = i;
+		output[i].data[1] = key_val;
+
+		// update time
+		key_time += FbxTime(fbx_frametime);
+	}
+
+	// get remaining frame (if exists)
+	/*if (extra_frame) {
+		key_val = static_cast<float>(animCurve->KeyGetValue(num_frames - 1));
+		output[num_frames - 1].data[0] = num_frames - 1;
+		output[num_frames - 1].data[1] = key_val;
+	}*/
+	return output;
+}
+
 /// \brief Get animation curve data from fbx
 /// \param node FbxNode with animation information
 /// \param animstack FbxAnimLayer with animation information
@@ -170,11 +216,24 @@ void getCurveInfo(FbxNode* node, FbxAnimLayer* animlayer, AnimClipFBX& animclip,
   dd_array<vec2_f> bin[] = {frame_X, frame_Y, frame_Z};
 
   for (auto& transform : {CurveArgs::ROT, CurveArgs::TRANS}) {
+		//// x axis
+		//lAnimCurve = getCurve(node, animlayer, transform, order[0]);
+		//bin[0] = getKeyFrames2(lAnimCurve, animclip.m_framerate);
+		//// y axis
+		//lAnimCurve = getCurve(node, animlayer, transform, order[1]);
+		//bin[1] = getKeyFrames2(lAnimCurve, animclip.m_framerate);
+		//// z axis
+		//lAnimCurve = getCurve(node, animlayer, transform, order[2]);
+		//bin[2] = getKeyFrames2(lAnimCurve, animclip.m_framerate);
+
+
+
     // loop thru x, y, and z axis
     for (unsigned idx = 0; idx < 3; idx++) {
       lAnimCurve = getCurve(node, animlayer, transform, order[idx]);
       if (lAnimCurve) {
-        bin[idx] = getKeyFrames(lAnimCurve, lAnimCurve->KeyGetCount());
+				//bin[idx] = getKeyFrames(lAnimCurve, lAnimCurve->KeyGetCount());
+				bin[idx] = getKeyFrames2(lAnimCurve, animclip.m_framerate);
         // fill in animation for particular axis
         for (unsigned i = 0; i < bin[idx].size(); i++) {
           unsigned frame_num = (unsigned)bin[idx][i].x();
@@ -235,9 +294,9 @@ void processAnimLayer(FbxNode* node, FbxAnimLayer* animlayer, AssetFBX& _asset,
   // only save animations from skeleton
   for (unsigned i = 0; i < _asset.m_skeleton.m_numJoints && !bone_found; i++) {
     if (_asset.m_skeleton.m_joints[i].m_name == node_name) {
-      bone_found = true;
       printf("%s\n", lOutputString.Buffer());
       getCurveInfo(node, animlayer, clip, i, _asset.m_viconFormat);
+			bone_found = true;
     }
   }
 
@@ -330,8 +389,8 @@ void processAnimation(FbxNode* node, FbxAnimStack* animstack, AssetFBX& _asset,
     for (unsigned j = 0; j < _asset.m_clips[i].m_joints; j++) {
       // printf("%s\n", _asset.m_skeleton.m_joints[j].m_name.str());
       // fix issues with keyed animation
-      fillIn(_asset.m_clips[i].m_clip, false, j);
-      fillIn(_asset.m_clips[i].m_clip, true, j);
+      //fillIn(_asset.m_clips[i].m_clip, false, j);
+      //fillIn(_asset.m_clips[i].m_clip, true, j);
     }
   }
 }
