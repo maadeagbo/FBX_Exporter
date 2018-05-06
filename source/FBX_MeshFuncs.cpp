@@ -169,11 +169,11 @@ dd_array<vec2_f> getKeyFrames2(FbxAnimCurve* animCurve, const unsigned fps) {
 	unsigned num_frames = (unsigned)(curve_length / (1.0/fps));
 
 	// check if there's a remainder frame
-	/*bool extra_frame = false;
+	bool extra_frame = false;
 	if (animCurve->KeyGetCount() > (int)num_frames) {
 		extra_frame = true;
 		num_frames += 1;
-	}*/
+	}
 
 	dd_array<vec2_f> output(num_frames);
 	float key_val = 0.f;
@@ -181,8 +181,8 @@ dd_array<vec2_f> getKeyFrames2(FbxAnimCurve* animCurve, const unsigned fps) {
 	const FbxLongLong fbx_frametime = FBXSDK_TC_SECOND / fps;
 	int last_frame = 0;
 
-	//const unsigned f_limit = (extra_frame) ? num_frames - 1 : num_frames;
-	for (unsigned i = 0; i < num_frames; i++) {
+	const unsigned f_limit = (extra_frame) ? num_frames - 1 : num_frames;
+	for (unsigned i = 0; i < f_limit; i++) {
 		// get value and frame number
 		key_val = animCurve->Evaluate(key_time, &last_frame);
 
@@ -194,11 +194,11 @@ dd_array<vec2_f> getKeyFrames2(FbxAnimCurve* animCurve, const unsigned fps) {
 	}
 
 	// get remaining frame (if exists)
-	/*if (extra_frame) {
+	if (extra_frame) {
 		key_val = static_cast<float>(animCurve->KeyGetValue(num_frames - 1));
 		output[num_frames - 1].data[0] = num_frames - 1;
 		output[num_frames - 1].data[1] = key_val;
-	}*/
+	}
 	return output;
 }
 
